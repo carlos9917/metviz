@@ -23,26 +23,50 @@ from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 
 from mpl_toolkits.basemap import interp
-
-#import cdo
-from cdo import *
-cdo   = Cdo()
+import os
 
 # Path to Grib data
 #root_fig = dom+'_'
-variable = "Temperature"
-vlevel=0
-unit = ''
-level_step=2
-TIME="2021/08/14/12/"
-dom="IGB"
-labelfig="ref"
-root_grib = 'IGB_S3_'+labelfig+'/'+TIME
-grib = root_grib + 'ICMSHHARM+0003_IGB_S3_'+labelfig+'.grib'
-only_check = False
-plot_diffs = True
-single_plot = False
+#variable = "Temperature"
+#vlevel=0
+#unit = ''
+#level_step=2
+#TIME="2021/08/14/12/"
+#dom="IGB"
+#labelfig="ref"
+#root_grib = 'IGB_S3_'+labelfig+'/'+TIME
+#only_check = False
+#plot_diffs = True
+#single_plot = False
 #grib = root_grib + 'ICMSHFULL+0003_IGB_S3_test.grib'
+
+
+from configparser import ConfigParser
+config = ConfigParser()
+config.read("settings.ini")
+TIME = config['plots']['TIME']
+dom = config['plots']['dom']
+testcase = config['plots']['testcase']
+variable = config['plots']['variable']
+var_img = config['plots']['var_img']
+vlevel = config.getint('plots','vlevel')
+unit = config['plots']['unit']
+level_step = config.getint('plots','level_step')
+HOUR1 = config['plots']['HOUR1']
+HOUR2 = config['plots']['HOUR2']
+outpath = config['plots']['outpath']
+root_grib = config['plots']['root_grib']
+labelfig = config.get('plots','labelfig')
+plot_diffs = config.getboolean('plots','plot_diffs')
+single_plot = config.getboolean("plots","single_plot")
+only_check = config.getboolean('plots', 'only_check')
+color = 'RdBu_r'
+# Path to Grib data
+
+
+grib = os.path.join(root_grib,'IGB_S3_'+testcase,TIME,'ICMSHHARM+'+HOUR1+'_IGB_S3_'+testcase+'.grib')
+
+#grib = os.path.join(root_grib,TIME, + 'ICMSHHARM+0003_IGB_S3_'+labelfig+'.grib'
 grbs = pygrib.open(grib)
 
 def chmod_fig(image_path):
@@ -66,7 +90,7 @@ def crop_image(image_path,coords=(220,170,1000,1000)):
     bottom = height # 3 * height / 4
     #coords=(left, top, right, bottom)
     #coords=(220,150,900,1000)
-    print("Box: left-top, right-bottom {}".format(coords))
+    #print("Box: left-top, right-bottom {}".format(coords))
     cropped_image = image.crop(coords)
     saved_location=image_path.replace(".png","_cropped.png")
     cropped_image.save(saved_location)
@@ -92,8 +116,8 @@ def centerMap(lats,lons,scale):
     southLat = min(lats)
     westLon = max(lons)
     eastLon = min(lons)
-    print("min and max lat {} {}".format(southLat,northLat))
-    print("min and max lon {} {}".format(eastLon,westLon))
+    #print("min and max lat {} {}".format(southLat,northLat))
+    #print("min and max lon {} {}".format(eastLon,westLon))
 
     # average between max and min longitude 
     lon0 = ((westLon-eastLon)/2.0)+eastLon
@@ -124,7 +148,7 @@ def plotting(lons, lats, data, name, unit, level_step, color,dom,image_path):
     ax = plt.subplot(111)
     #To check where the center of the map is located
     check_center=centerMap(lats.flatten(),lons.flatten(),1)
-    print("Center of the {} map: (lat0,lon0) {}".format(dom,check_center))
+    #print("Center of the {} map: (lat0,lon0) {}".format(dom,check_center))
     if dom=="IGB":
         m = Basemap(llcrnrlon=-55, llcrnrlat=55.8, urcrnrlon=80, urcrnrlat=80, lat_1=72, lat_0=72., lon_0=-36, resolution='h', projection='lcc')
     elif dom=="East":
@@ -135,12 +159,19 @@ def plotting(lons, lats, data, name, unit, level_step, color,dom,image_path):
     if name == 'Temperature' and not "diff" in image_path:
         data = data - 273.15 
     # Plot data
+    print("min and max of data {} {}".format(min(data.flatten()),max(data.flatten())))
     import matplotlib as mpl
     cmap = mpl.cm.coolwarm
     cmap = mpl.cm.RdBu_r
-    print("min and max of data {} {}".format(min(data.flatten()),max(data.flatten())))
-    minVal = min(data.flatten())
-    maxVal = max(data.flatten())
+    import math
+    minVal = math.floor(min(data.flatten()))
+    maxVal = math.floor(max(data.flatten()))
+    print(f"min and max to plot {minVal} {maxVal}")
+    if "diff" in image_path:
+        if abs(minVal) > abs(maxVal): maxVal = math.ceil(abs(minVal))
+        if abs(maxVal) > abs(minVal): minVal = math.floor(-maxVal)
+        print(f"min and max are now {minVal} {maxVal}")
+    maxVal = maxVal + 0.01 # this to make the damn scale plot the upper limit!!!
 
     norm = mpl.colors.Normalize(vmin=minVal, vmax=maxVal)
     if name == "Temperature":
@@ -277,9 +308,9 @@ if __name__ == '__main__':
             print(f"{name} at level {level} with units {units}")
         sys.exit(0)
 
-    outpath='.'
     #unit = 'K' #'m/s' 
     if single_plot:
+        print(grib)
         for grb in grbs:
             if grb.name == variable and grb.level==vlevel:
                 data = grb.values
@@ -296,13 +327,17 @@ if __name__ == '__main__':
                 crop_image(image_path,coords=(220,160,1000,1000))
                 break
     if plot_diffs:
-        print("Plotting diffs")
+        print(f"Plotting diffs for {variable}")
+
         root_fig = "_".join(['diff',var_img,TIME.replace("/","")])
-        root_grib = 'IGB_S3_ref/2021/08/14/12/'
-        grib1 = root_grib + 'ICMSHHARM+0003_IGB_S3_ref.grib'
-        
-        root_grib = 'IGB_S3_test/2021/08/14/12/'
-        grib2 = root_grib + 'ICMSHHARM+0003_IGB_S3_test.grib'
+        #root_grib = 'IGB_S3_ref/2021/08/14/12/'
+        #grib1 = root_grib + 'ICMSHHARM+0003_IGB_S3_ref.grib'
+
+        #root_grib = 'IGB_S3_test/2021/08/14/12/'
+        grib1 = os.path.join(root_grib,'IGB_S3_ref',TIME,'ICMSHHARM+'+HOUR1+'_IGB_S3_ref.grib')
+        grib2 = os.path.join(root_grib,'IGB_S3_test',TIME,'ICMSHHARM+'+HOUR1+'_IGB_S3_test.grib')
+        print(grib1)
+        print(grib2)
         grbs1 = pygrib.open(grib1)
         grbs2 = pygrib.open(grib2)
         for grb in grbs1:

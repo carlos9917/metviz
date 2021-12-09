@@ -19,24 +19,37 @@ from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import interp
 import os
-
+from configparser import ConfigParser
+config = ConfigParser()
+config.read("settings.ini")
+TIME = config['plots']['TIME']
+dom = config['plots']['dom']
+testcase = config['plots']['testcase']
+variable = config['plots']['variable']
+var_img = config['plots']['var_img']
+vlevel = config.getint('plots','vlevel')
+unit = config['plots']['unit']
+level_step = config.getint('plots','level_step')
+HOUR1 = config['plots']['HOUR1']
+HOUR2 = config['plots']['HOUR2']
+outpath = config['plots']['outpath']
+root_grib = config['plots']['root_grib']
 # Path to Grib data
 #root_fig = dom+'_'
-TIME="2021/08/14/12/"
-dom="IGB"
-testcase="ref"
-variable = "Rain"
-var_img="Rain"
-vlevel = 0
-unit = ''
-level_step=1
-HOUR1="0005"
-HOUR2="0006"
-outpath='.'
-root_grib = 'IGB_S3_'+testcase+'/'+TIME
+#TIME="2021/08/14/12/"
+#dom="IGB"
+#testcase="ref"
+#variable = "Rain"
+#var_img="Rain"
+#vlevel = 0
+#unit = ''
+#level_step=1
+#HOUR1="0005"
+#HOUR2="0006"
+#outpath='.'
 only_check = False
 plot_diffs = False
-root_fig = "_".join(['diff',HOUR1,HOUR2,var_img,TIME.replace("/","")])
+root_fig = "_".join(['diff',testcase,HOUR1,HOUR2,var_img,TIME.replace("/","")])
 def chmod_fig(image_path):
     cmd = "chmod 755 "+image_path
     try:
@@ -84,8 +97,8 @@ def centerMap(lats,lons,scale):
     southLat = min(lats)
     westLon = max(lons)
     eastLon = min(lons)
-    print("min and max lat {} {}".format(southLat,northLat))
-    print("min and max lon {} {}".format(eastLon,westLon))
+    #print("min and max lat {} {}".format(southLat,northLat))
+    #print("min and max lon {} {}".format(eastLon,westLon))
 
     # average between max and min longitude 
     lon0 = ((westLon-eastLon)/2.0)+eastLon
@@ -116,7 +129,7 @@ def plotting(lons, lats, data, name, unit, level_step, color,dom,image_path):
     ax = plt.subplot(111)
     #To check where the center of the map is located
     check_center=centerMap(lats.flatten(),lons.flatten(),1)
-    print("Center of the {} map: (lat0,lon0) {}".format(dom,check_center))
+    #print("Center of the {} map: (lat0,lon0) {}".format(dom,check_center))
     if dom=="IGB":
         m = Basemap(llcrnrlon=-55, llcrnrlat=55.8, urcrnrlon=80, urcrnrlat=80, lat_1=72, lat_0=72., lon_0=-36, resolution='h', projection='lcc')
     elif dom=="East":
@@ -131,16 +144,22 @@ def plotting(lons, lats, data, name, unit, level_step, color,dom,image_path):
     cmap = mpl.cm.coolwarm
     cmap = mpl.cm.RdBu_r
     print("min and max of data {} {}".format(min(data.flatten()),max(data.flatten())))
-    minVal = min(data.flatten())
-    maxVal = max(data.flatten())
+    import math
+    minVal = math.floor(min(data.flatten()))
+    maxVal = math.ceil(max(data.flatten()))
+    #print("Making diffs symmetric")
+    #if abs(minVal) > abs(maxVal): maxVal = abs(minVal)
+    #if abs(maxVal) > abs(minVal): minVal = -maxVal
+    print(f"min and max are now {minVal} {maxVal}")
+
 
     norm = mpl.colors.Normalize(vmin=minVal, vmax=maxVal)
-    maxVal = 12
     cmap = mpl.cm.coolwarm
     #clev = np.arange(minVal-2,maxVal+2,level) #0.001)
     clev = np.arange(minVal,maxVal,level_step) #0.001)
-    print("Plotting in levels {}".format(clev))
-    CS_tmp = m.contourf(x,y,data,clev,cmap=plt.cm.coolwarm) #,levels=level)
+    #print("Plotting in levels {}".format(clev))
+    CS_tmp = m.contourf(x,y,data,cmap=plt.cm.coolwarm) #,levels=level)
+    #CS_tmp = m.contourf(x,y,data,clev,cmap=plt.cm.coolwarm) #,levels=level)
     #CS_tmp = m.contourf(x,y,data,cmap=plt.cm.coolwarm) #,levels=level)
     clb = plt.colorbar(CS_tmp,fraction=0.03 )#,ticks=use_ticks)
     #clb.ax.set_title(unit,labelpad=-1)
@@ -193,13 +212,17 @@ def plotting(lons, lats, data, name, unit, level_step, color,dom,image_path):
     #return image_path
 
 if __name__ == '__main__':
+    #root_grib='/scratch/ms/dk/nhd/SISAWS/IGB/data/'
+
     print("Plotting rain diffs")
-    grib1 = root_grib + 'ICMSHHARM+'+HOUR1+'_IGB_S3_'+testcase+'.grib'
-    grib2 = root_grib + 'ICMSHHARM+'+HOUR2+'_IGB_S3_'+testcase+'.grib'
+    grib1 = os.path.join(root_grib,'IGB_S3_'+testcase,TIME,'PRECIP+'+HOUR1+'_IGB_S3_'+testcase+'.grib')
+    grib2 = os.path.join(root_grib,'IGB_S3_'+testcase,TIME,'PRECIP+'+HOUR2+'_IGB_S3_'+testcase+'.grib')
     print(f"Doing difference between {grib1} and {grib2}")
     grbs1 = pygrib.open(grib1)
     grbs2 = pygrib.open(grib2)
+    vlevel = 0
     for grb in grbs1:
+       print(grb.level)
        if grb.name == variable and grb.level==vlevel:
            data1 = grb.values
            lats, lons = grb.latlons()
@@ -211,7 +234,6 @@ if __name__ == '__main__':
        if grb.name == variable and grb.level==vlevel:
            data2 = grb.values
            break
-    
     data=data2-data1
     image_path = os.path.join(outpath,root_fig + '.png') 
     plotting(lons, lats, data, name, unit, level_step, color,dom,image_path)
