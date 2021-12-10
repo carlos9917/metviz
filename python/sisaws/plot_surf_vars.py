@@ -14,13 +14,13 @@ import matplotlib
 matplotlib.use('Agg')
 import subprocess
 
-from mpl_toolkits.basemap import Basemap
+#from mpl_toolkits.basemap import Basemap
 
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 
-from mpl_toolkits.basemap import interp
+#from mpl_toolkits.basemap import interp
 import os
 
 from configparser import ConfigParser
@@ -288,8 +288,8 @@ if __name__ == '__main__':
             grib2 = os.path.join(root_grib,'IGB_S3_ref',TIME,'ICMSHHARM+'+HOUR1+'_IGB_S3_ref.grib')
             ds1 = up.read_vars(grib1,params)
             ds2 = up.read_vars(grib2,params)
-            ds2["params"]["t2m"]["field"] = ds2["params"]["t2m"]["field"]-ds1["params"]["t2m"]["field"]
-            fig=up.t2m_rh2m(ds2,testcase+" experiment.","diff")
+            ds1["params"]["t2m"]["field"] = ds1["params"]["t2m"]["field"]-ds2["params"]["t2m"]["field"]
+            fig=up.t2m_rh2m(ds1,testcase+" experiment.","diff")
         else:
             ds = up.read_vars(grib,params)
             fig=up.t2m_rh2m(ds2,testcase+" experiment.","std")

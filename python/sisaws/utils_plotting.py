@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import sys
 import argparse
 import os
-import yaml
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import datetime
@@ -21,7 +20,7 @@ import copy
 import glob
 import pyproj
 
-import eccodes as ecc
+#import eccodes as ecc
 import re
 from collections import OrderedDict
 import gc
@@ -39,80 +38,80 @@ def str2dict(string):
         s = opt.split('=')
         keys[s[0]] = s[1]
     return keys
-
-def check_codes(gribfile):
-    '''
-    check some grib codes
-    '''
-    f = open(gribfile)
-    while 1:
-        gid = ecc.codes_grib_new_from_file(f)
-        if gid is None:
-            break
-        keys = ('name', 'shortName', 'levelType','typeOfLevel','level','param')
-        check_key =  ecc.codes_get(gid, "name")
-        if check_key == "Pressure":
-            for key in keys:
-                print('string %s: %s' % (key, ecc.codes_get(gid, key)))
-                print('grib codes %s: %s' % (key, ecc.codes_get(gid, key,ktype=int)))
-
-def locate_vars(gribfile):
-    '''
-    Short function to help me find the f*ing codes!
-    '''
-    f = ecc.GribFile(gribfile)
-    for i in range(len(f)):
-        msg = ecc.GribMessage(f)
-        param=msg["param"]
-        #print(f'name {msg["name"]},shortName {msg["shortName"]}')
-        if msg["name"] == "Temperature" and msg["typeOfLevel"] == "heightAboveGround" and msg["level"] == 2:
-            print("2m Temperature")
-            print(f'Parameter: {param}')
-            print(f'levelType: {msg["levelType"]}')
-            print(f'typeOfLevel: {msg["typeOfLevel"]}')
-            
-        if msg["name"] == "u-component of wind" and msg["typeOfLevel"] == "heightAboveGround" and msg["level"] == 10:
-            print("u10")
-            print(f'Parameter: {param}')
-            print(f'levelType: {msg["levelType"]}')
-            print(f'typeOfLevel: {msg["typeOfLevel"]}')
-        if msg["name"] == "v-component of wind" and msg["typeOfLevel"] == "heightAboveGround" and msg["level"] == 10:
-            print("v10")
-            print(f'Parameter: {param}')
-            print(f'levelType: {msg["levelType"]}')
-            print(f'typeOfLevel: {msg["typeOfLevel"]}')
-        if msg["name"] == "Wind speed" and msg["typeOfLevel"] == "heightAboveGround" and msg["level"] == 10:
-            print("10m wind speed")
-            print(f'Parameter: {param}')
-            print(f'levelType: {msg["levelType"]}')
-            print(f'typeOfLevel: {msg["typeOfLevel"]}')
-        if msg["name"] == "Wind direction" and msg["typeOfLevel"] == "heightAboveGround" and msg["level"] == 10:
-            print("10m wind direction")
-            print(f'Parameter: {param}')
-            print(f'levelType: {msg["levelType"]}')
-            print(f'typeOfLevel: {msg["typeOfLevel"]}')
-        if msg["shortName"] == "tp":
-            print("Total precipitation")
-            print(f'Parameter: {param}')
-            print(f'level: {msg["level"]}')
-            print(f'levelType: {msg["levelType"]}')
-            print(f'typeOfLevel: {msg["typeOfLevel"]}')
-        if msg["name"] == "Pressure" and msg["typeOfLevel"] == "heightAboveSea" and msg["level"] == 0 and msg["levelType"] == "103":
-            print(">>>>> Found mslp")
-            print(f'Parameter: {param}')
-            print(f'levelType: {msg["levelType"]}')
-            print(f'typeOfLevel: {msg["typeOfLevel"]}')
-            print(msg["name"])
-        if msg["name"] == "Mean sea level pressure": # and msg["typeOfLevel"] == "surface" and msg["level"] == 0 and msg["levelType"] == "0":
-            print(">>>>> Found msl ERA")
-            print(f'Parameter: {param}')
-            print(f'level: {msg["level"]}')
-            print(f'levelType: {msg["levelType"]}')
-            print(f'typeOfLevel: {msg["typeOfLevel"]}')
-        #if msg["name"] == "Pressure" and msg["level"] == 0:
-        #    print(f"param: {param}, name: {msg['name']}, typeOfLevel: {msg['typeOfLevel']}, levelType {msg['levelType']}")
-
-    sys.exit()
+# based on eccodes
+#def check_codes(gribfile):
+#    '''
+#    check some grib codes
+#    '''
+#    f = open(gribfile)
+#    while 1:
+#        gid = ecc.codes_grib_new_from_file(f)
+#        if gid is None:
+#            break
+#        keys = ('name', 'shortName', 'levelType','typeOfLevel','level','param')
+#        check_key =  ecc.codes_get(gid, "name")
+#        if check_key == "Pressure":
+#            for key in keys:
+#                print('string %s: %s' % (key, ecc.codes_get(gid, key)))
+#                print('grib codes %s: %s' % (key, ecc.codes_get(gid, key,ktype=int)))
+#
+#def locate_vars(gribfile):
+#    '''
+#    Short function to help me find the f*ing codes!
+#    '''
+#    f = ecc.GribFile(gribfile)
+#    for i in range(len(f)):
+#        msg = ecc.GribMessage(f)
+#        param=msg["param"]
+#        #print(f'name {msg["name"]},shortName {msg["shortName"]}')
+#        if msg["name"] == "Temperature" and msg["typeOfLevel"] == "heightAboveGround" and msg["level"] == 2:
+#            print("2m Temperature")
+#            print(f'Parameter: {param}')
+#            print(f'levelType: {msg["levelType"]}')
+#            print(f'typeOfLevel: {msg["typeOfLevel"]}')
+#            
+#        if msg["name"] == "u-component of wind" and msg["typeOfLevel"] == "heightAboveGround" and msg["level"] == 10:
+#            print("u10")
+#            print(f'Parameter: {param}')
+#            print(f'levelType: {msg["levelType"]}')
+#            print(f'typeOfLevel: {msg["typeOfLevel"]}')
+#        if msg["name"] == "v-component of wind" and msg["typeOfLevel"] == "heightAboveGround" and msg["level"] == 10:
+#            print("v10")
+#            print(f'Parameter: {param}')
+#            print(f'levelType: {msg["levelType"]}')
+#            print(f'typeOfLevel: {msg["typeOfLevel"]}')
+#        if msg["name"] == "Wind speed" and msg["typeOfLevel"] == "heightAboveGround" and msg["level"] == 10:
+#            print("10m wind speed")
+#            print(f'Parameter: {param}')
+#            print(f'levelType: {msg["levelType"]}')
+#            print(f'typeOfLevel: {msg["typeOfLevel"]}')
+#        if msg["name"] == "Wind direction" and msg["typeOfLevel"] == "heightAboveGround" and msg["level"] == 10:
+#            print("10m wind direction")
+#            print(f'Parameter: {param}')
+#            print(f'levelType: {msg["levelType"]}')
+#            print(f'typeOfLevel: {msg["typeOfLevel"]}')
+#        if msg["shortName"] == "tp":
+#            print("Total precipitation")
+#            print(f'Parameter: {param}')
+#            print(f'level: {msg["level"]}')
+#            print(f'levelType: {msg["levelType"]}')
+#            print(f'typeOfLevel: {msg["typeOfLevel"]}')
+#        if msg["name"] == "Pressure" and msg["typeOfLevel"] == "heightAboveSea" and msg["level"] == 0 and msg["levelType"] == "103":
+#            print(">>>>> Found mslp")
+#            print(f'Parameter: {param}')
+#            print(f'levelType: {msg["levelType"]}')
+#            print(f'typeOfLevel: {msg["typeOfLevel"]}')
+#            print(msg["name"])
+#        if msg["name"] == "Mean sea level pressure": # and msg["typeOfLevel"] == "surface" and msg["level"] == 0 and msg["levelType"] == "0":
+#            print(">>>>> Found msl ERA")
+#            print(f'Parameter: {param}')
+#            print(f'level: {msg["level"]}')
+#            print(f'levelType: {msg["levelType"]}')
+#            print(f'typeOfLevel: {msg["typeOfLevel"]}')
+#        #if msg["name"] == "Pressure" and msg["level"] == 0:
+#        #    print(f"param: {param}, name: {msg['name']}, typeOfLevel: {msg['typeOfLevel']}, levelType {msg['levelType']}")
+#
+#    sys.exit()
 
 def msg2ds(vars):
     ds = {}
@@ -328,13 +327,13 @@ def t2m_rh2m(ds,extra_title,ptype):
     import math
     minVal = math.floor(min(data))
     maxVal = math.floor(max(data))
-    clev = np.arange(round(minVal,2),round(maxVal,2),2)
+    print(f"min and max are {minVal}, {maxVal}")
+    #clev = np.arange(round(minVal,2),round(maxVal,2),2)
     clev = np.array([-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6])
-    print(clev)
     #CARRA orig
     #CS = ax.contourf(lons,lats,t2m,transform=ccrs.PlateCarree(),colors=t_colors,levels=t_levels)
-    #CS = ax.contourf(lons,lats,t2m,transform=ccrs.PlateCarree()) #,cmap=plt.cm.coolwarm,levels=clev)
-    CS = ax.contourf(lons,lats,t2m,transform=ccrs.PlateCarree()) #,cmap=plt.cm.coolwarm,levels=clev)
+    CS = ax.contourf(lons,lats,t2m,transform=ccrs.PlateCarree(),cmap=plt.cm.coolwarm,levels=clev)
+    #CS = ax.contour(lons,lats,t2m,transform=ccrs.PlateCarree()) #,cmap=plt.cm.coolwarm,levels=clev)
     plt.colorbar(CS,shrink=0.5,orientation='vertical')
 
     ax.coastlines('50m')
