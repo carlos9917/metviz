@@ -1,28 +1,28 @@
 '''
-Make some plots for the SISAWS experiments
-Based on the scripts I used for the CDS plots for CARRA.
-Still using basemap here, just for convenience,
-but I should move this to cartopy
+plot surface variables
 '''
-
+import utils_plotting as up
+import gc
 import pygrib
+
 import numpy as np
 import math
+
 import matplotlib
 #matplotlib.use('TkAgg')
 #matplotlib.use('qt4agg')
 matplotlib.use('Agg')
 import subprocess
+
 from mpl_toolkits.basemap import Basemap
-
-import cartopy.crs as ccrs
-
 
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
+
 from mpl_toolkits.basemap import interp
 import os
+
 from configparser import ConfigParser
 config = ConfigParser()
 config.read("settings.ini")
@@ -38,22 +38,18 @@ HOUR1 = config['plots']['HOUR1']
 HOUR2 = config['plots']['HOUR2']
 outpath = config['plots']['outpath']
 root_grib = config['plots']['root_grib']
+labelfig = config.get('plots','labelfig')
+plot_diffs = config.getboolean('plots','plot_diffs')
+single_plot = config.getboolean("plots","single_plot")
+only_check = config.getboolean('plots', 'only_check')
+color = 'RdBu_r'
 # Path to Grib data
-#root_fig = dom+'_'
-#TIME="2021/08/14/12/"
-#dom="IGB"
-#testcase="ref"
-#variable = "Rain"
-#var_img="Rain"
-#vlevel = 0
-#unit = ''
-#level_step=1
-#HOUR1="0005"
-#HOUR2="0006"
-#outpath='.'
-only_check = False
-plot_diffs = False
-root_fig = "_".join(['diff',testcase,HOUR1,HOUR2,var_img,TIME.replace("/","")])
+
+
+
+#grib = os.path.join(root_grib,TIME, + 'ICMSHHARM+0003_IGB_S3_'+labelfig+'.grib'
+#grbs = pygrib.open(grib)
+
 def chmod_fig(image_path):
     cmd = "chmod 755 "+image_path
     try:
@@ -75,7 +71,7 @@ def crop_image(image_path,coords=(220,170,1000,1000)):
     bottom = height # 3 * height / 4
     #coords=(left, top, right, bottom)
     #coords=(220,150,900,1000)
-    print("Box: left-top, right-bottom {}".format(coords))
+    #print("Box: left-top, right-bottom {}".format(coords))
     cropped_image = image.crop(coords)
     saved_location=image_path.replace(".png","_cropped.png")
     cropped_image.save(saved_location)
@@ -135,8 +131,7 @@ def plotting(lons, lats, data, name, unit, level_step, color,dom,image_path):
     check_center=centerMap(lats.flatten(),lons.flatten(),1)
     #print("Center of the {} map: (lat0,lon0) {}".format(dom,check_center))
     if dom=="IGB":
-        #m = Basemap(llcrnrlon=-55, llcrnrlat=55.8, urcrnrlon=80, urcrnrlat=80, lat_1=72, lat_0=72., lon_0=-36, resolution='h', projection='lcc')
-        m = ccrs.LambertConformal(central_longitude = 34, central_latitude = 73.8)
+        m = Basemap(llcrnrlon=-55, llcrnrlat=55.8, urcrnrlon=80, urcrnrlat=80, lat_1=72, lat_0=72., lon_0=-36, resolution='h', projection='lcc')
     elif dom=="East":
         m = Basemap(resolution="i", width=3850000,height=3850000,  projection='aea',\
                    lon_0=34,lat_0=73.8,lat_1=70)
@@ -145,32 +140,56 @@ def plotting(lons, lats, data, name, unit, level_step, color,dom,image_path):
     if name == 'Temperature' and not "diff" in image_path:
         data = data - 273.15 
     # Plot data
+    print("min and max of data {} {}".format(min(data.flatten()),max(data.flatten())))
     import matplotlib as mpl
     cmap = mpl.cm.coolwarm
     cmap = mpl.cm.RdBu_r
-    print("min and max of data {} {}".format(min(data.flatten()),max(data.flatten())))
     import math
     minVal = math.floor(min(data.flatten()))
-    maxVal = math.ceil(max(data.flatten()))
-    #print("Making diffs symmetric")
-    #if abs(minVal) > abs(maxVal): maxVal = abs(minVal)
-    #if abs(maxVal) > abs(minVal): minVal = -maxVal
-    print(f"min and max are now {minVal} {maxVal}")
-
+    maxVal = math.floor(max(data.flatten()))
+    print(f"min and max to plot {minVal} {maxVal}")
+    if "diff" in image_path:
+        if abs(minVal) > abs(maxVal): maxVal = math.ceil(abs(minVal))
+        if abs(maxVal) > abs(minVal): minVal = math.floor(-maxVal)
+        print(f"min and max are now {minVal} {maxVal}")
+    maxVal = maxVal + 0.01 # this to make the damn scale plot the upper limit!!!
 
     norm = mpl.colors.Normalize(vmin=minVal, vmax=maxVal)
-    cmap = mpl.cm.coolwarm
-    #clev = np.arange(minVal-2,maxVal+2,level) #0.001)
-    clev = np.arange(minVal,maxVal,level_step) #0.001)
-    #print("Plotting in levels {}".format(clev))
-    CS_tmp = m.contourf(x,y,data,cmap=plt.cm.coolwarm) #,levels=level)
-    #CS_tmp = m.contourf(x,y,data,clev,cmap=plt.cm.coolwarm) #,levels=level)
-    #CS_tmp = m.contourf(x,y,data,cmap=plt.cm.coolwarm) #,levels=level)
-    clb = plt.colorbar(CS_tmp,fraction=0.03 )#,ticks=use_ticks)
-    #clb.ax.set_title(unit,labelpad=-1)
-    clb.set_label(unit, labelpad=2)
-    #clb.set_label("m/s", rotation=270)
-    #cb.ax.set_title("Test 2")
+    if name == "Temperature":
+        clev = np.arange(round(minVal,2),round(maxVal,2),level_step) #0.01)
+        #clev = np.arange(-10,24,2) #0.01)
+        CS_tmp = m.contourf(x,y,data,clev,cmap=plt.cm.coolwarm)
+        clb = plt.colorbar(CS_tmp,fraction=0.03)
+        #clb = plt.colorbar(CS_tmp,fraction=0.03,ticks=[-24,-8,-4,0,4,8,12,16,24])
+    elif name == "Relative humidity":
+        cmap = mpl.cm.coolwarm
+        clev = np.arange(minVal,maxVal+10,level_step) #0.001)
+        use_ticks = [10,20,30,40,50,60,70,80,90,100]
+        CS_tmp = m.contourf(x,y,data,clev,cmap=plt.cm.coolwarm) #,levels=level)
+        clb = plt.colorbar(CS_tmp,fraction=0.03,ticks=use_ticks)
+        clb.ax.set_title(unit)
+    else: #For the differences try to make the scale simmetric
+        cmap = mpl.cm.coolwarm
+        if abs(minVal) > abs(maxVal): maxVal = abs(minVal)
+        if abs(maxVal) > abs(minVal): minVal = -maxVal
+        #clev = np.arange(minVal-2,maxVal+2,level) #0.001)
+        clev = np.arange(minVal,maxVal,level_step) #0.001)
+        print("Plotting in levels {}".format(clev))
+        CS_tmp = m.contourf(x,y,data,clev,cmap=plt.cm.coolwarm) #,levels=level)
+        #CS_tmp = m.contourf(x,y,data,cmap=plt.cm.coolwarm) #,levels=level)
+        if unit == "m/s":
+            use_ticks=list(np.arange(int(minVal),int(maxVal),level_step))
+        else:
+            print("Using extended ticks for %s"%name)
+            #use_ticks=list(np.arange(minVal,maxVal,level_step*30)) #This is for Specific humidity
+            use_ticks=list(np.arange(minVal,maxVal,level_step)) #This is for Specific humidity
+            #use_ticks=list(np.arange(minVal,maxVal,level_step)) 
+        print("Using ticks {}".format(use_ticks))
+        clb = plt.colorbar(CS_tmp,fraction=0.03,ticks=use_ticks)
+        #clb.ax.set_title(unit,labelpad=-1)
+        clb.set_label(unit, labelpad=2)
+        #clb.set_label("m/s", rotation=270)
+        #cb.ax.set_title("Test 2")
 
     #clb = plt.colorbar(CS_tmp,fraction=0.042, pad=0.04,ticks=[-50,-40,-30,-20,-10,0,10,20])
     #from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -216,31 +235,69 @@ def plotting(lons, lats, data, name, unit, level_step, color,dom,image_path):
     plt.close('all')
     #return image_path
 
-if __name__ == '__main__':
-    #root_grib='/scratch/ms/dk/nhd/SISAWS/IGB/data/'
+def plot_cross(lats,pres,data, name, unit, level_step, color,dom,outpath):
+    print("in plot_cross")
+    fig=plt.figure() #figsize=(10, 10))   
+    ax = plt.subplot(111)
+    minVal = min(data.flatten())
+    maxVal = max(data.flatten())
+    clev = np.arange(minVal,maxVal,level_step) #0.01)
+    lats=lats.flatten()
+    print(len(pres))
+    print(len(lats))
+    Lats,Pres = np.meshgrid(lats,pres)
+    ax.contourf(Lats,Pres,data,clev,cmap=plt.cm.coolwarm)
+    #clb = plt.colorbar(CS_tmp,fraction=0.03,ticks=[-50,-40,-30,-20,-10,0,10,20])
+    #plt.tight_layout()
+    plt.show()
+    image_path = os.path.join(outpath,root_fig + name.replace(' ', '_').replace('/', '_').replace(',', '').replace(':', '_') + '.png')
+    fig.savefig("test.png")
+    #plt.close('all')
 
-    print("Plotting rain diffs")
-    grib1 = os.path.join(root_grib,'IGB_S3_'+testcase,TIME,'PRECIP+'+HOUR1+'_IGB_S3_'+testcase+'.grib')
-    grib2 = os.path.join(root_grib,'IGB_S3_'+testcase,TIME,'PRECIP+'+HOUR2+'_IGB_S3_'+testcase+'.grib')
-    print(f"Doing difference between {grib1} and {grib2}")
-    grbs1 = pygrib.open(grib1)
-    grbs2 = pygrib.open(grib2)
-    vlevel = 0
-    for grb in grbs1:
-       print(grb.level)
-       if grb.name == variable and grb.level==vlevel:
-           data1 = grb.values
-           lats, lons = grb.latlons()
-           name = variable # +"_"+ TIME.replace("/","")#grb.name # + " 01/01/2019 06:00 AM"
-           color = 'RdBu_r'
-           break
-    
-    for grb in grbs2:
-       if grb.name == variable and grb.level==vlevel:
-           data2 = grb.values
-           break
-    data=data2-data1
-    image_path = os.path.join(outpath,root_fig + '.png') 
-    plotting(lons, lats, data, name, unit, level_step, color,dom,image_path)
-    #chmod_fig(image_path)
-    crop_image(image_path,coords=(220,160,1000,1000))
+def plot_vertical_vel(grbs):
+    variable = "Vertical velocity"
+    vlevel=850
+    unit = 'm/s'
+    level_step=1
+    levels = []
+    if variable == "Vertical velocity":
+        for grb in grbs:
+            levels.append(grb.name)
+        print("After loop")
+        grbs = pygrib.open(grib)
+        for grb in grbs:
+            print(grb.name)
+            if grb.name == variable:
+                name = grb.name # + " 01/01/2019 06:00 AM"
+                data = grb.values
+                lats, lons = grb.latlons()
+                pres = levels #grb.level
+                color = 'RdBu_r'
+                plot_cross(lats, pres,data, name, unit, level_step, color,dom)
+                sys.exit()
+
+if __name__ == '__main__':
+    import sys
+    var_img = variable.replace(" ","_")
+    root_fig = "_".join([labelfig,var_img,TIME.replace("/","")])
+    grib = os.path.join(root_grib,'IGB_S3_'+testcase,TIME,'ICMSHHARM+'+HOUR1+'_IGB_S3_'+testcase+'.grib')
+    if variable == "Temperature":
+        params = {'t2m':{"param":"11.253","level":2,"typeOfLevel":"heightAboveGround","levelType":"sfc"}}
+        if testcase == "diff":
+            grib1 = os.path.join(root_grib,'IGB_S3_test',TIME,'ICMSHHARM+'+HOUR1+'_IGB_S3_test.grib')
+            grib2 = os.path.join(root_grib,'IGB_S3_ref',TIME,'ICMSHHARM+'+HOUR1+'_IGB_S3_ref.grib')
+            ds1 = up.read_vars(grib1,params)
+            ds2 = up.read_vars(grib2,params)
+            ds2["params"]["t2m"]["field"] = ds2["params"]["t2m"]["field"]-ds1["params"]["t2m"]["field"]
+            fig=up.t2m_rh2m(ds2,testcase+" experiment.","diff")
+        else:
+            ds = up.read_vars(grib,params)
+            fig=up.t2m_rh2m(ds2,testcase+" experiment.","std")
+
+        plt.savefig(root_fig) #'t2m.png')
+        fig.clf()
+        plt.close(fig)
+        gc.collect()
+
+
+
