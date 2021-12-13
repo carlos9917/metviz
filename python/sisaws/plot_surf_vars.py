@@ -279,9 +279,8 @@ def plot_vertical_vel(grbs):
 if __name__ == '__main__':
     import sys
     var_img = variable.replace(" ","_")
-    root_fig = "_".join([labelfig,var_img,TIME.replace("/","")])
-    grib = os.path.join(root_grib,'IGB_S3_'+testcase,TIME,'ICMSHHARM+'+HOUR1+'_IGB_S3_'+testcase+'.grib')
     if variable == "Temperature":
+        root_fig = "_".join([labelfig,var_img,TIME.replace("/","")])
         params = {'t2m':{"param":"11.253","level":2,"typeOfLevel":"heightAboveGround","levelType":"sfc"}}
         if testcase == "diff":
             grib1 = os.path.join(root_grib,'IGB_S3_test',TIME,'ICMSHHARM+'+HOUR1+'_IGB_S3_test.grib')
@@ -289,12 +288,41 @@ if __name__ == '__main__':
             ds1 = up.read_vars(grib1,params)
             ds2 = up.read_vars(grib2,params)
             ds1["params"]["t2m"]["field"] = ds1["params"]["t2m"]["field"]-ds2["params"]["t2m"]["field"]
-            fig=up.t2m_rh2m(ds1,testcase+" experiment.","diff")
+            clev = np.array([-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6])
+            fig=up.t2m_rh2m(ds1,"Difference between ref - test exp.","diff",clev)
         else:
+            grib = os.path.join(root_grib,'IGB_S3_'+testcase,TIME,'ICMSHHARM+'+HOUR1+'_IGB_S3_'+testcase+'.grib')
+
+            clev = np.array([-12,-10,-8,-6,-4,-2,0,2,4,6,8,10,12,14,16,18,20,22,24])
             ds = up.read_vars(grib,params)
-            fig=up.t2m_rh2m(ds2,testcase+" experiment.","std")
+            fig=up.t2m_rh2m(ds,testcase+" experiment ","std",clev)
 
         plt.savefig(root_fig) #'t2m.png')
+        fig.clf()
+        plt.close(fig)
+        gc.collect()
+
+    if variable == "Rain":
+        params ={"tp":{"param":"181.253","level":0,"typeOfLevel":"heightAboveGround","levelType":"sfc"}}
+
+        if labelfig == "hourly":
+            root_fig = "_".join([labelfig,testcase,var_img,HOUR1,HOUR2,TIME.replace("/","")])
+            grib1 = os.path.join(root_grib,'IGB_S3_'+testcase,TIME,'PRECIP+'+HOUR1+'_IGB_S3_'+testcase+'.grib')
+            grib2 = os.path.join(root_grib,'IGB_S3_'+testcase,TIME,'PRECIP+'+HOUR2+'_IGB_S3_'+testcase+'.grib')
+            ds1 = up.read_vars(grib1,params)
+            ds2 = up.read_vars(grib2,params)
+            ds2["params"]["tp"]["field"] = ds2["params"]["tp"]["field"]-ds1["params"]["tp"]["field"]
+            #clev = np.array([-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6])
+            clev = np.arange(-2,12,2)
+            fig=up.precip(ds2,"Difference hours "+HOUR1+" "+HOUR2+" "+testcase+" ","hourly",clev)
+        else:
+            grib = os.path.join(root_grib,'IGB_S3_'+testcase,TIME,'PRECIP+'+HOUR1+'_IGB_S3_'+testcase+'.grib')
+            ds = up.read_vars(grib,params)
+            clev = None
+            clev = np.array([0,10,20])
+            clev = np.arange(0,30,4)
+            fig=up.precip(ds,testcase+" experiment ","std",clev)
+        plt.savefig(root_fig)
         fig.clf()
         plt.close(fig)
         gc.collect()

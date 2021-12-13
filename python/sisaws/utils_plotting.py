@@ -19,6 +19,7 @@ import datetime
 import copy
 import glob
 import pyproj
+import matplotlib as mpl
 
 #import eccodes as ecc
 import re
@@ -117,7 +118,6 @@ def msg2ds(vars):
     ds = {}
     for param in vars:
         msghit = vars[param]['msg']
-        #print("Here it is crashing")
         nx = msghit['Nx']
         ny = msghit['Ny']
         date = msghit['date']
@@ -237,6 +237,74 @@ def read_vars(gribfile,params):
 # -------------------------
 # Functions to do the plots
 # -------------------------
+def precip(ds,title_pre,ptype,precip_levels):
+    lons = ds['misc']['lons']
+    lats = ds['misc']['lats']
+    proj = ds['misc']['proj']
+    dt = ds['misc']['date']
+    fcstep = ds['misc']['fcstep']
+
+    PRJ = pyproj.Proj(proj.proj4_init)
+
+    # Plotting parameters
+    #precip_levels = [0.5,2,4,10,25,50,100,250]
+
+    # Fields to plot
+    precip = ds['params']['tp']['field']
+    data = precip.flatten()
+    import math
+    minVal = math.floor(min(data))
+    maxVal = math.floor(max(data))
+    print(f"min and max are {minVal}, {maxVal}")
+    if not isinstance(precip_levels,np.ndarray): 
+        precip_levels = np.arange(minVal,maxVal,2)
+        print(f"Setting up levels automatically: {precip_levels}")
+    else:
+        print(f"Using levels provided by user {precip_levels}")
+
+
+    cmap = plt.cm.coolwarm
+    cmap = mpl.cm.RdBu_r
+    cmap = mpl.cm.YlGnBu
+    cmap = mpl.cm.Blues
+    #cmap = mpl.cm.RdYlBu #works ok for neg diffs
+    #precip_colors = ['aqua','dodgerblue','blue','m','magenta','darkorange','red']
+
+    fig = plt.figure(figsize=[12,9],edgecolor='k')
+    ax = plt.axes(projection=proj)
+    CS2 = ax.contourf(lons,lats,precip,
+                          transform=ccrs.PlateCarree(),
+                          levels=precip_levels,
+                          cmap=cmap)
+                          #colors=precip_colors)
+                          #zorder=2,
+                          #alpha=0.9)
+    plt.colorbar(CS2,shrink=0.5,orientation='vertical')
+    #land_50m = cfeature.NaturalEarthFeature('physical', 'land', '50m',
+    #                                        edgecolor='face',
+    #                                        facecolor=cfeature.COLORS['land'])
+    #ax.add_feature(land_50m)
+    ax.coastlines('50m')
+    ax.gridlines()
+    # to draw labels on parallels and meridians, but looks horrible
+    #ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False)
+
+
+    x0,y0 = PRJ(lons[0,0],lats[0,0])
+    x1,y1 = PRJ(lons[-1,-1],lats[-1,-1])
+    #print(f"Plot limits: x0,y0: {x0,y0} and x1,y1: {x1,y1}")
+    #current limits
+    #x0,y0: (-1339448.628359203, -1588581.2086919418)  
+    #x1,y1: (1342323.3032700778, 1593395.454609298)
+    N = 10000
+    ax.set_xlim(x0-N,x1+N)
+    ax.set_ylim(y0-N,y1+N)
+    #This zooms in to the left corner
+    #ax.set_xlim(x0-N,100000)
+    #ax.set_ylim(y0-N,100000)
+    #plt.title("acc precip and MSLP \n%s UTC + %dh" % (dt.strftime('%Y-%m-%d %H:00'), fcstep))
+    plt.title(title_pre+"%s UTC + %dh" % (dt.strftime('%Y-%m-%d %H:00'), fcstep))
+    return fig
 
 def mslp_precip(ds,accum_time="3"):
     '''
@@ -300,7 +368,7 @@ def mslp_precip(ds,accum_time="3"):
     plt.title(title_pre+"%s UTC + %dh" % (dt.strftime('%Y-%m-%d %H:00'), fcstep))
     return fig
 
-def t2m_rh2m(ds,extra_title,ptype):
+def t2m_rh2m(ds,extra_title,ptype,clev):
     lons = ds['misc']['lons']
     lats = ds['misc']['lats']
     proj = ds['misc']['proj']
@@ -319,17 +387,18 @@ def t2m_rh2m(ds,extra_title,ptype):
     if ptype != "diff": #only convert to C if I am not plotting the difference
         t2m = ds['params']['t2m']['field'] - 273.15
     else:
+        #clev = np.array([-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6])
         t2m = ds['params']['t2m']['field']
-
-    fig = plt.figure(figsize=[12,9])
-    ax = plt.axes(projection=proj)
     data = t2m.flatten()
     import math
     minVal = math.floor(min(data))
     maxVal = math.floor(max(data))
     print(f"min and max are {minVal}, {maxVal}")
+    #if ptype != "diff": clev = np.arange(minVal,maxVal,2)
+
+    fig = plt.figure(figsize=[12,9])
+    ax = plt.axes(projection=proj)
     #clev = np.arange(round(minVal,2),round(maxVal,2),2)
-    clev = np.array([-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6])
     #CARRA orig
     #CS = ax.contourf(lons,lats,t2m,transform=ccrs.PlateCarree(),colors=t_colors,levels=t_levels)
     CS = ax.contourf(lons,lats,t2m,transform=ccrs.PlateCarree(),cmap=plt.cm.coolwarm,levels=clev)
