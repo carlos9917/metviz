@@ -47,13 +47,15 @@ diffstr=diff_IGB_S3SICE
 #diffstr=diff_IGB_msnow
 YEAR=2021
 MONTH=08
+D1=1
+D2=20
 #YEAR=1997
 #MONTH=09
 NL=$CLD/full_nam_prec
 
 #for DAY in `seq -w 1 31`
 #for DAY in 11 12 13 14 15 16 17 18 19 20
-for DAY in 14 14
+for DAY in `seq -w $D1 $D2`
 do
   for HOUR in `seq -w 0 3 21`
   #for HOUR in 12
@@ -73,10 +75,10 @@ do
       #$HOME/bin/gl -p $DESTFILE -n $sNL -o $DESTDIR/ICMSHFULL+000${H}_$EXP.grib 
       DESTDIR=$DS/$EXP/$tdir
       [ ! -d $DESTDIR ] && mkdir -p $DESTDIR
-     for H in 3 4 5 6;do
-      DESTFILE=$DESTDIR/ICMSHHARM+000$H
-      [ ! -f $FILE  ] && ecp $EXPdir/$tdir/ICMSHHARM+000$H $DESTFILE
-      $HOME/bin/gl -p $DESTFILE -n $NL -o $DESTDIR/PRECIP+000${H}_$EXP.grib && rm -f $DESTFILE
+     for HH in `seq -w 03 06`;do
+      FILE=$DESTDIR/ICMSHHARM+00${HH}
+      [ ! -f $FILE  ] && ecp $EXPdir/$tdir/ICMSHHARM+00${HH} $FILE
+      $HOME/bin/gl -p $FILE -n $NL -o $DESTDIR/PRECIP+00${HH}_$EXP.grib && rm -f $FILE
      done
     done
 
