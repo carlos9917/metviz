@@ -1,6 +1,6 @@
  &naminterp
-   readkey%ppp =001,181,184,201,
+   readkey%ppp = 001,181,184,201,
    readkey%lll = 0, 0,  0,  0,
-   readkey%ttt =105,105,105,105,
+   readkey%ttt = 105,105,105,105,
    readkey%tri = 0, 4,  4,  4,
  /

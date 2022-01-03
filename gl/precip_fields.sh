@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-#SBATCH --error=/home/ms/dk/nhd/scripts/sisaws/kristian_scripts/err_gl
-#SBATCH --output=/home/ms/dk/nhd/scripts/sisaws/kristian_scripts/out_gl
+#SBATCH --error=/home/ms/dk/nhd/scripts/metviz/gl/err_gl
+#SBATCH --output=/home/ms/dk/nhd/scripts/metviz/gl/out_gl
 #SBATCH --job-name=gl
 
 CLD=$PWD #$HOME/scr/IGB_exps
@@ -52,6 +52,7 @@ D2=20
 #YEAR=1997
 #MONTH=09
 NL=$CLD/full_nam_prec
+NP=$CLD/full_nam_pres
 
 #for DAY in `seq -w 1 31`
 #for DAY in 11 12 13 14 15 16 17 18 19 20
@@ -76,12 +77,28 @@ do
       DESTDIR=$DS/$EXP/$tdir
       [ ! -d $DESTDIR ] && mkdir -p $DESTDIR
      for HH in `seq -w 03 06`;do
+      echo "TIME: $tdir/$HH"
+      #For precipitation
       FILE=$DESTDIR/ICMSHHARM+00${HH}
+      OFILE=$DESTDIR/PRECIP+00${HH}_$EXP.grib
+      echo "Doing precipitation. Output file: $OFILE"
       [ ! -f $FILE  ] && ecp $EXPdir/$tdir/ICMSHHARM+00${HH} $FILE
-      $HOME/bin/gl -p $FILE -n $NL -o $DESTDIR/PRECIP+00${HH}_$EXP.grib && rm -f $FILE
+      #[ ! -f $OFILE ] && $HOME/bin/gl -p $FILE -n $NL -o $OFILE && rm -f $FILE
+      $HOME/bin/gl -p $FILE -n $NL -o $OFILE && rm -f $FILE
+
+      #For pressure. Not working, since no pressure level pressure (103 leveltype)
+      #FILE=$DESTDIR/ICMSHHARM+00${HH}.sfx
+      #OFILE=$DESTDIR/PRESS+00${HH}_$EXP.grib
+      #echo "Doing pressure. Output file: $OFILE"
+      #[ ! -f $FILE ] && ecp $EXPdir/$tdir/ICMSHFULL+00${HH}.sfx $FILE
+      #[ ! -f $OFILE ] && $HOME/bin/gl -p $FILE -n $NP -o $OFILE && rm -f $FILE
+      #exit 0
+
      done
     done
 
   done
 done
 exit 0
+
+#PFHARM

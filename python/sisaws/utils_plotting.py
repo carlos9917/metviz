@@ -197,11 +197,18 @@ def read_vars(gribfile,params):
     ds = {}
     vars = copy.deepcopy(params)
     f = pygrib.open(gribfile)
+    print(f"Opening {gribfile}")
+    found_it = False
     for msg in f:
         for param in vars:
+            #print(f"{msg['param']}  {msg['level']}")
             if vars[param]['param']== msg['param'] and vars[param]["level"]==msg["level"] and vars[param]["typeOfLevel"]==msg['typeOfLevel'] and vars[param]["levelType"]==msg["levelType"]:
                 print(f'found {vars[param]}')
                 vars[param]['msg'] = msg
+                found_it = True
+    if not found_it:
+        print(f"No data found in {grifile} for {params}")
+        sys.exit(1)
             
     for param in vars:
         msghit = vars[param]['msg']
@@ -238,6 +245,7 @@ def read_vars(gribfile,params):
 # Functions to do the plots
 # -------------------------
 def precip(ds,title_pre,ptype,precip_levels):
+    PRES=False #do not plot pressure too
     lons = ds['misc']['lons']
     lats = ds['misc']['lats']
     proj = ds['misc']['proj']
@@ -251,6 +259,8 @@ def precip(ds,title_pre,ptype,precip_levels):
 
     # Fields to plot
     precip = ds['params']['tp']['field']
+    if PRES: mslp = ds['params']['mslp']['field']/100
+
     data = precip.flatten()
     import math
     minVal = math.floor(min(data))
@@ -272,6 +282,15 @@ def precip(ds,title_pre,ptype,precip_levels):
 
     fig = plt.figure(figsize=[12,9],edgecolor='k')
     ax = plt.axes(projection=proj)
+    if PRES:
+        CS = ax.contour(lons,lats,mslp,
+                        transform=ccrs.PlateCarree(),
+                        levels=pcontours,
+                        colors='k',
+                        zorder=3,
+                        linewidths=[2,1,1,1,1])
+        ax.clabel(CS,inline=1,fmt='%d')
+
     CS2 = ax.contourf(lons,lats,precip,
                           transform=ccrs.PlateCarree(),
                           levels=precip_levels,

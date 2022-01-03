@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 VAR="Rain"
-TEST="test"
+TEST="ref"
 DATE="2021081412"
 F1=figures/ref_Temperature_2021081412.png
 F2=figures/test_Temperature_2021081412.png
@@ -12,8 +12,35 @@ F3=hourly_test_Rain_0005_0006_2021081412.png
 
 
 module load python3
-python3 combine_images.py -figs $F1,$F2,$F3  -fout ${TEST}_${VAR}_${DATE}.png
+#python3 combine_images.py -figs $F1,$F2,$F3  -fout ${TEST}_${VAR}_${DATE}.png
 
+function loop_dates()
+{
+  YEAR=2021
+  MONTH=08
+  D1=11 #first 10 days are just spin up
+  D2=20
+  
+  HOURS1=(0003 0004 0005)
+  HOURS2=(0004 0005 0006)
+  for i in 0 1 2 3; do
+  HOUR1=${HOURS1[i]}
+  HOUR2=${HOURS2[i]}
+  for DAY in `seq -w $D1 $D2`; do
+    for HOUR in `seq -w 0 3 21`;do
+      DATE=${YEAR}${MONTH}${DAY}${HOUR}
+     F1=figures/${TEST}/hourly_${TEST}_${VAR}_0003_0004_${DATE}.png
+     F2=figures/${TEST}/hourly_${TEST}_${VAR}_0004_0005_${DATE}.png
+     F3=figures/${TEST}/hourly_${TEST}_${VAR}_0005_0006_${DATE}.png
+     FOUT=figures/${TEST}/${TEST}_${VAR}_${DATE}.png
+     echo "Combining $F1 $F2 $F3"
+     python3 combine_images.py -figs $F1,$F2,$F3  -fout ${FOUT}
+    done
+  done
+  done
+}
+
+loop_dates
 
 #convert ref_${VAR}_${DATE}.png -trim ref.png
 #convert test_${VAR}_${DATE}.png test.png
