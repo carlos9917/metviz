@@ -1,0 +1,24 @@
+NAMDDH=>{
+'LFLEXDIA' => '.TRUE.,', # activates the whole diagnostic
+'BDEDDH(1,01)' => '4.,', # type of domain, here isolated point by lon/lat
+'BDEDDH(2,01)' => '1.,', # virtual plane, interesting for rectangles
+'BDEDDH(3,01)' => '0026.590529,', # Sodankylä
+'BDEDDH(4,01)' => '0067.411836,',
+'BDEDDH(1,02)' => '4.,',
+'BDEDDH(2,02)' => '1.,',
+'BDEDDH(3,02)' => '0011.928201,', # Ny-Ålesund
+'BDEDDH(4,02)' => '0078.922469,',
+'BDEDDH(1,03)' => '4.,',
+'BDEDDH(2,03)' => '1.,',
+'BDEDDH(3,03)' => '0019.005000,', # Bjørnøya
+'BDEDDH(4,03)' => '0074.516700,',
+'LHDDOP' => '.TRUE.,', # type of domain: limited and isolated point
+'LHDEFD' => '.TRUE.,', # write limited domain diagnostic on file
+'LHDHKS' => '.TRUE.,', # budget of mass, energy, momentum, RH, soil
+'LHDMCI' => '.FALSE.,', # budget of kinetic momentum
+'LHDENT' => '.FALSE.,', # budget of entropy
+'LRSLDDH' => '.FALSE.,', # (?) 
+'LRSIDDH' => '.FALSE.,', # (?)
+'LRHDDDH' => '.FALSE.,', # h. diffusion DDH, caused problems for me
+},
+);

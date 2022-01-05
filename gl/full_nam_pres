@@ -1,0 +1,6 @@
+ &naminterp
+   readkey%ppp =001
+   readkey%lll = 0
+   readkey%ttt =103
+   readkey%tri = 0
+ /
