@@ -31,6 +31,16 @@ import pygrib
 import os
 from os import path
 
+def color_scales(choice):
+    if choice == "gnu":
+        colors = ["white", "black", "yellow", "black", "orange", "black", "red", "black",  "magenta",                    "black", "blue","black", "cyan", "black", "green"]
+    elif choice == "danra_prec":
+        colors = ['aqua','dodgerblue','blue','m','magenta','darkorange','red']
+    else:
+         print(f"Scale {choice} unknown")
+         colors = None
+
+    return colors
 
 def str2dict(string):
     keys = {}
@@ -245,7 +255,11 @@ def read_vars(gribfile,params):
 # Functions to do the plots
 # -------------------------
 def precip(ds,title_pre,ptype,precip_levels):
+    #TODO: make the two arg below fn args
+    # Currently not finding the correct pressure levels in the data
     PRES=False #do not plot pressure too
+    CONT=True #use continuous scale
+    USELOG=True
     lons = ds['misc']['lons']
     lats = ds['misc']['lats']
     proj = ds['misc']['proj']
@@ -266,23 +280,27 @@ def precip(ds,title_pre,ptype,precip_levels):
     minVal = math.floor(min(data))
     maxVal = math.floor(max(data))
     print(f"min and max are {minVal}, {maxVal}")
-    if not isinstance(precip_levels,np.ndarray): 
+    #If the precipitation levels are not defined by the user, then define them here
+    #if not isinstance(precip_levels,np.ndarray): 
+    if precip_levels is None:
         precip_levels = np.arange(minVal,maxVal,2)
         print(f"Setting up levels automatically: {precip_levels}")
     else:
         print(f"Using levels provided by user {precip_levels}")
 
-
+    #Trying different colour scales... not good at this shit.
     cmap = plt.cm.coolwarm
     cmap = mpl.cm.RdBu_r
     cmap = mpl.cm.YlGnBu
     cmap = mpl.cm.Blues
     #cmap = mpl.cm.RdYlBu #works ok for neg diffs
     #precip_colors = ['aqua','dodgerblue','blue','m','magenta','darkorange','red']
+    
+
 
     fig = plt.figure(figsize=[12,9],edgecolor='k')
     ax = plt.axes(projection=proj)
-    if PRES:
+    if PRES: #plot pressure levels
         CS = ax.contour(lons,lats,mslp,
                         transform=ccrs.PlateCarree(),
                         levels=pcontours,
@@ -291,14 +309,41 @@ def precip(ds,title_pre,ptype,precip_levels):
                         linewidths=[2,1,1,1,1])
         ax.clabel(CS,inline=1,fmt='%d')
 
-    CS2 = ax.contourf(lons,lats,precip,
+    #Plot precipitation
+
+    #Test using log scale:
+    if USELOG:
+        import matplotlib.colors as colors
+        use_cmap = "plasma" #colors.Colormap('plasma')
+
+        from matplotlib import ticker
+        colors_prec = color_scales("gnu")
+        numticks = len(colors_prec)
+        numticks = len(precip_levels)
+        CS2 = ax.contourf(lons,lats,precip,
+                          transform=ccrs.PlateCarree(),
+                          locator=ticker.LogLocator(),#numticks),
+                          levels = precip_levels,
+                          #colors=colors_prec)
+                          cmap=use_cmap) #cmap)
+    else:
+        CS2 = ax.contourf(lons,lats,precip,
                           transform=ccrs.PlateCarree(),
                           levels=precip_levels,
                           cmap=cmap)
+                          #norm=norm)
                           #colors=precip_colors)
                           #zorder=2,
                           #alpha=0.9)
-    plt.colorbar(CS2,shrink=0.5,orientation='vertical')
+    #in case I want to use a continous color scale, normalize first
+    if CONT:
+        #print("Usig cont scale")
+        norm= matplotlib.colors.Normalize(vmin=CS2.cvalues.min(), vmax=CS2.cvalues.max())
+        sm = plt.cm.ScalarMappable(norm=norm, cmap = CS2.cmap)
+        plt.colorbar(sm, ticks=CS2.levels,shrink=0.5,orientation='vertical')
+    else:
+        plt.colorbar(CS2,shrink=0.5,orientation='vertical')
+
     #land_50m = cfeature.NaturalEarthFeature('physical', 'land', '50m',
     #                                        edgecolor='face',
     #                                        facecolor=cfeature.COLORS['land'])
