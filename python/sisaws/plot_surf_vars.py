@@ -85,6 +85,7 @@ if __name__ == '__main__':
             #clev = np.array([-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6])
             clev = np.arange(0.01,25,1)
             clev = np.array([0.01,0.1,1,2,5,10,15,20,25])
+            clev = np.array([0.01,0.1,1,10,100])
             #clev=None
             fig=up.precip(ds2,"Difference hours "+HOUR1+" "+HOUR2+" "+testcase+" ","hourly",clev)
         else:
