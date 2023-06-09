@@ -20,6 +20,7 @@ import copy
 import glob
 import pyproj
 import matplotlib as mpl
+import color_schemes as cschemes
 
 #import eccodes as ecc
 import re
@@ -315,6 +316,7 @@ def precip(ds,title_pre,ptype,precip_levels):
     if USELOG:
         import matplotlib.colors as colors
         use_cmap = "plasma" #colors.Colormap('plasma')
+        use_cmap = cschemes.color_maps("kpnprec")
 
         from matplotlib import ticker
         colors_prec = color_scales("gnu")
