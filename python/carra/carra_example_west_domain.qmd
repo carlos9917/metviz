@@ -1,0 +1,135 @@
+---
+title: "CARRA tutorial to download and plot data"
+format: html
+author: "Carlos Peralta"
+date: "18 July 2023"
+jupyter: python3
+
+---
+## Introduction
+
+This document provides a couple of examples of how
+to access and plot CARRA data, with
+a particular emphasis on the west domain
+It also includes a comparison with ERA5 data
+and climate means.
+
+
+## Downloading the data
+There are two ways to access the CARRA data.
+The first one is using the MARS archive in any
+of the login nodes of the atos cluster.
+The second one is using the Climate Data Store (CDS) API.
+Before using CDS a registration is required.
+Follow the instructions in this link
+[this link](https://cds.climate.copernicus.eu/api-how-to).
+
+Once setup, load the API key (the one called CDS_UID) in your
+Set the CDS_API_KEY in your system and export it
+
+```
+export CDS_API_KEY=your_key
+```
+The API call follows the syntax below
+
+
+```{python}
+
+URL = 'https://cds.climate.copernicus.eu/api/v2'
+KEY = os.getenv("CDS_UID")
+c = cdsapi.Client()
+DATADIR = './' #path where the data will be downloaded
+```
+
+We will use metview to do the plotting and loading the data.
+The data can also be downloaded using
+
+
+If you don't know what the fields are called, one way
+to get the correct names is browsing the catalog in the CDS
+website. 
+For CARRA data, visit [this link](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-carra-model-levels?tab=form),
+and then click at the bottom of the page where it says "Show API request"
+For ERA5 use [this link](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form)
+
+
+Retrieval of CARRA data. Sample levels
+
+c.retrieve(
+ 'reanalysis-carra-single-levels',
+    {
+        'format': 'grib',
+        'variable': 'all',
+        'level_type': 'surface_or_atmosphere',
+        'domain': 'west_domain',
+        'product_type': 'analysis',
+        'time': [ '00:00' ],
+        'year': '2012',
+        'month': '07',
+        'day': ["01" ],
+    },
+    'sample-carra-single-levels.grib')
+
+
+c.retrieve(
+ 'reanalysis-carra-height-levels',
+    {
+        'format': 'grib',
+        'variable': 'all',
+        'domain': 'west_domain',
+        'product_type': 'analysis',
+        'time': [ '00:00' ],
+        'year': '2012',
+        'month': '07',
+        'day': ["01" ],
+    },
+    'sample-carra-height-levels.grib')
+
+c.retrieve(
+ 'reanalysis-carra-pressure-levels',
+    {
+        'format': 'grib',
+        'variable': 'all',
+        'domain': 'west_domain',
+        'product_type': 'analysis',
+        'time': [ '00:00' ],
+        'year': '2012',
+        'month': '07',
+        'day': ["01" ],
+    },
+    'sample-carra-pressure-levels.grib')
+
+
+#        'variable': '2m_temperature',
+
+
+```{python}
+c.retrieve(
+    'reanalysis-carra-height-levels',
+    {
+        'format': 'netcdf',
+        'domain': 'west_domain',
+        'variable': [
+            'wind_direction', 'wind_speed',
+        ],
+        'height_level': [
+            '100_m'
+        ],
+        'product_type': 'forecast',
+        'time': [
+            '00:00'
+        ],
+        'leadtime_hour': [
+            '1', '2', '3',
+        ],
+        'year': '2008',
+        'month': '03',
+        'day': [
+            '03'
+        ],
+    },
+    'wind_100m_west.nc')
+
+
+```
+
