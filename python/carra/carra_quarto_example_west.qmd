@@ -1,0 +1,168 @@
+---
+title: "CARRA tutorial to download and plot data"
+format: html
+author: "Carlos Peralta"
+date: "18 July 2023"
+date-modified: last-modified
+lang: en
+jupyter: python3
+---
+## Introduction
+
+This document provides a couple of examples of how
+to access and plot CARRA data, with
+a particular emphasis on the west domain.
+
+```{python}
+import numpy as np
+import xarray as xr
+from rich import print
+import matplotlib.path as mpath
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import cartopy.feature as cfeature
+import cdsapi
+# Disable warnings for data download via API
+import urllib3 
+urllib3.disable_warnings()
+import os
+```
+
+## Downloading the data
+There are two ways to access the CARRA data.
+The first one is using the MARS archive in any
+of the login nodes of the ATOS cluster.
+The second one is using the Climate Data Store (CDS) API.
+Before using CDS a registration is required.
+Follow the instructions in this link
+[this link](https://cds.climate.copernicus.eu/api-how-to).
+
+Once setup, load the API key (the one called CDS_UID) in your
+Set the CDS_API_KEY in your system and export it.
+
+```
+export CDS_API_KEY=your_key
+```
+The API call follows the syntax below
+
+
+```{python}
+
+URL = 'https://cds.climate.copernicus.eu/api/v2'
+KEY = os.getenv("CDS_UID")
+c = cdsapi.Client()
+DATADIR = './' #path where the data will be downloaded
+```
+
+If you don't know what the fields are called, one way
+to get the correct names is browsing the catalog in the CDS
+website. 
+For CARRA data, visit [this link](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-carra-model-levels?tab=form),
+and then click at the bottom of the page where it says "Show API request"
+For ERA5 use [this link](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form)
+
+
+Example retrievals of CARRA data for surface, height and pressure levels.
+
+```{python}
+fsl = './sample-carra-single-levels.grib2'
+fhl = './sample-carra-height-levels.grib2'
+fpl = './sample-carra-pressure-levels.grib2'
+```
+
+Surface levels data.
+```{python}
+if not os.path.isfile(fsl):
+    c.retrieve(
+     'reanalysis-carra-single-levels',
+        {
+            'format': 'grib',
+            'variable': 'all',
+            'level_type': 'surface_or_atmosphere',
+            'domain': 'west_domain',
+            'product_type': 'analysis',
+            'time': [ '00:00' ],
+            'year': '2020',
+            'month': '01',
+            'day': ["01" ],
+        },
+        fsl)
+else:
+    print(f"{fsl} already downloaded!")
+```
+
+Height levels data.
+```{python}
+if not os.path.isfile(fhl):
+    c.retrieve(
+     'reanalysis-carra-height-levels',
+        {
+            'format': 'grib',
+            'variable': 'all',
+            'domain': 'west_domain',
+            'product_type': 'analysis',
+            'time': [ '00:00' ],
+            'year': '2020',
+            'month': '01',
+            'day': ["01" ],
+        },
+       fhl) 
+else:
+    print(f"{fhl} already downloaded!")
+```
+ 
+Pressure levels data.
+```{python}   
+if not os.path.isfile(fpl):
+    c.retrieve(
+     'reanalysis-carra-pressure-levels',
+        {
+            'format': 'grib',
+            'variable': 'all',
+            'domain': 'west_domain',
+            'product_type': 'analysis',
+            'time': [ '00:00' ],
+            'year': '2020',
+            'month': '01',
+            'day': ["01" ],
+        },
+        fpl)
+else:
+    print(f"{fpl} already downloaded!")
+```
+
+The data can also be retrieved in netcdf format.
+
+```{python}
+fhl_wind = 'wind_100m_west.nc'
+if not os.path.isfile(fhl_wind):
+    c.retrieve(
+        'reanalysis-carra-height-levels',
+        {
+            'format': 'netcdf',
+            'domain': 'west_domain',
+            'variable': [
+                'wind_direction', 'wind_speed',
+            ],
+            'height_level': [
+                '100_m'
+            ],
+            'product_type': 'forecast',
+            'time': [
+                '00:00'
+            ],
+            'leadtime_hour': [
+                '1', '2', '3',
+            ],
+            'year': '2020',
+            'month': '01',
+            'day': [
+                '01'
+            ],
+        },
+       fhl_wind)
+else:
+    print(f"{fhl_wind} already downloaded!")
+```
+
