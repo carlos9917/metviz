@@ -9,20 +9,13 @@ jupyter: python3
 ## Introduction
 
 This document provides a couple of examples of how
-to access and plot CARRA data and climate means.
+plot CARRA data and climate means.
 It also includes a comparison with ERA5 data
 and climate means.
 
-We will use metview to do the plotting and loading the data.
-The data can also be downloaded using metview. CHECK
 ```{python}
 import numpy as np
 import xarray as xr
-```
-
-Libraries for plotting and visualising data in a given projection
-
-```{python}
 import matplotlib.path as mpath
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
@@ -38,13 +31,8 @@ warnings.filterwarnings('ignore')
 ```
 
 ## Downloading the data
-There are two ways to access the CARRA data.
-The first one is using the MARS archive in any
-of the login nodes of the ATOS cluster.
-The second one is using the Climate Data Store (CDS) API.
-Before using CDS a registration is required.
-Follow the instructions in this link
-[this link](https://cds.climate.copernicus.eu/api-how-to).
+Please see the example in [this link](https://cds.climate.copernicus.eu/api-how-to)
+for ways to pull the data from CDS.
 
 Once setup, load the API key (the one called CDS_UID) in your
 Set the CDS_API_KEY in your system and export it.
