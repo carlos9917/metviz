@@ -3,15 +3,16 @@ title: "CARRA tutorial to download and plot means from CARRA and ERA5"
 format: html
 author: "Carlos Peralta"
 date: "26 July 2023"
+date-modified: last-modified
+lang: en
 jupyter: python3
 
 ---
+
 ## Introduction
 
-This document provides a couple of examples of how
-plot CARRA data and climate means.
-It also includes a comparison with ERA5 data
-and climate means.
+This document provides examples of how to plot climate means from CARRA.
+It also includes a comparison with ERA5 climate means.
 
 ```{python}
 import numpy as np
@@ -32,9 +33,9 @@ warnings.filterwarnings('ignore')
 
 ## Downloading the data
 Please see the example in [this link](https://cds.climate.copernicus.eu/api-how-to)
-for ways to pull the data from CDS.
+for ways to pull the data from CDS, or the notebook [here](https://carlos9917.github.io/metviz/python/carra/carra_quarto_example_west.html).
 
-Once setup, load the API key (the one called CDS_UID) in your
+Once setup, load the API key (the one called CDS_UID) in your local environment.
 Set the CDS_API_KEY in your system and export it.
 
 ```
@@ -51,17 +52,14 @@ c = cdsapi.Client()
 DATADIR = './' #path where the data will be downloaded
 ```
 
-
-
 If you don't know what the fields are called, one way
-to get the correct names is browsing the catalog in the CDS
-website. 
+to get the correct names is browsing the catalog in the CDS website. 
 For CARRA data, visit [this link](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-carra-model-levels?tab=form),
 and then click at the bottom of the page where it says "Show API request"
 For ERA5 use [this link](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form)
 
 
-Retrieval of CARRA data. Sample levels
+Retrieval of ERA5 data. Sample levels
 ```{python}
 out_cds=f'{DATADIR}era5_monthly_t2m_greenland.nc'
 if not os.path.isfile(out_cds):
@@ -110,8 +108,15 @@ levels=np.linspace(-45,45,20)
 
 da_degc[0,0,:,:].plot.contourf(cmap=cmap,levels=levels)
 ```
+Alternatively we can plot it as a continuos field (same effect as using imshow)
 
-Get some carra data, in this case in grib2 format
+```{python}
+# or plot the field instead
+da_degc[0,0,:,:].plot()
+```
+
+The CARRA means are not yet available in CDS, but they should be available by the end of the year. 
+Reading here some local data, in this case in grib2 format.
 
 ```{python}
 fin_carra=os.path.join(DATADIR,"means_gribmean","t2m_mean.grib2")
@@ -122,10 +127,12 @@ ds_carra
 
 Plot the data without a projection
 ```{python}
-ds_carra["t2m"].plot() #.imshow(extent=[lons.min(), lons.max(), lats.min(),lats.max()])
+ds_carra_degc = ds_carra['t2m'] - 273.15
+#ds_carra["t2m"].plot() #.imshow(extent=[lons.min(), lons.max(), lats.min(),lats.max()])
+ds_carra_degc.plot() #.imshow(extent=[lons.min(), lons.max(), lats.min(),lats.max()])
 ```
 
-To read the data in an appropriate projection we will define some useful functions below
+To read the data in an appropriate projection we will define some useful functions below.
 
 ```{python}
 import copy
@@ -205,7 +212,6 @@ def read_vars(gribfile,params):
 Read again the data using the function above
 
 ```{python}
-
 params = {'t2m':{"param":"167","level":2,"typeOfLevel":"heightAboveGround","levelType":"sfc"}}
 fin_carra=os.path.join(DATADIR,"means_gribmean","t2m_mean.grib2")
 
