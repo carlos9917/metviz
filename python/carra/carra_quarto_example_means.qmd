@@ -50,6 +50,8 @@ URL = 'https://cds.climate.copernicus.eu/api/v2'
 KEY = os.getenv("CDS_UID")
 c = cdsapi.Client()
 DATADIR = './' #path where the data will be downloaded
+years = ["2021","2022","2023"]
+area_greenland = [85,-75,60,-10]
 ```
 
 If you don't know what the fields are called, one way

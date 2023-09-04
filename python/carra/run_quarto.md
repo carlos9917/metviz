@@ -10,10 +10,11 @@
 NBOOK=carra_quarto_example_west.qmd
 NBOOK=carra_quarto_example_means.qmd
 #create the html
-#quarto preview $NBOOK --no-browser --no-watch-inputs
+quarto preview $NBOOK --no-browser --no-watch-inputs
 
+#can also use
 #quarto render $NBOOK 
 
 
 #convert to ipynb
-quarto convert $NBOOK
+#quarto convert $NBOOK
