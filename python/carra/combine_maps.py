@@ -61,15 +61,15 @@ if __name__=="__main__":
     year = "2013"
 
     #combine only one day
-    period="20230101"
-    fig1 = os.path.join("means_gribmean","daily_mx2t_carra_2023-01-01.png")
-    fig2 = os.path.join("means_era5","daily_mx2t_era5_2023-01-01.png")
-    out = "maps_mx2t_"+period+".png"
-    combine_t2m(fig1,fig2,period)
-    sys.exit(0)
+    #period="20230101"
+    #fig1 = os.path.join("means_gribmean","daily_mx2t_carra_2023-01-01.png")
+    #fig2 = os.path.join("means_era5","daily_mx2t_era5_2023-01-01.png")
+    #out = "maps_mx2t_"+period+".png"
+    #combine_t2m(fig1,fig2,period)
+    #sys.exit(0)
 
 
-    for month in range(1,13):
+    for month in range(1,2):
         period = year+str(month).zfill(2)
         period = year + str(month).zfill(2)
 
@@ -78,7 +78,7 @@ if __name__=="__main__":
         #out = "maps_t2m_"+period+".png"
         #combine_t2m(fig1,fig2,period)
 
-        fig1 = os.path.join("means_gribmean","monthly_tp_carra_"+period+".png")
-        fig2 = os.path.join("means_era5","monthly_tp_era5_"+period+".png")
-        out = "maps_tp_"+period+".png"
+        fig1 = os.path.join("means_gribmean","monthly_tp_mslp_carra_"+period+".png")
+        fig2 = os.path.join("means_era5","monthly_tp_mslp_era5_"+period+".png")
+        out = "maps_tp_mslp_"+period+".png"
         combine_tp(fig1,fig2,period)

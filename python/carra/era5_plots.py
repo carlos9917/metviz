@@ -6,7 +6,8 @@ import pandas as pd
 from datetime import datetime
 import gc
 import sys
-OUTDIR="means_era5"
+import numpy as np
+
 
 year="2020"
 month="01"
@@ -111,7 +112,50 @@ def plot_tp(era5_file,sizex=16,sizey=12):
         plt.close(fig)
         gc.collect()
 
+def plot_tp_mslp(era5_file,sizex=16,sizey=12):
+    ds = xr.open_dataset(era5_file,engine="scipy")
+    ds_180 = ds.assign_coords(longitude=(((ds.longitude + 180) % 360) - 180)).sortby('longitude')
+    da_tp = ds_180['tp']*1000
+    da_pr = ds_180['msl']/100 #the original is in Pa
+    pcontours = np.arange(900,1060,2)
+    for k,time in enumerate(da_tp.time):
+        this_time = pd.to_datetime(time.values)
+        time_str = datetime.strftime(this_time,"%Y-%m-%d")
+        period = datetime.strftime(this_time,"%Y%m")
+        # create the figure panel and the map using the Cartopy PlateCarree projection
+        fig, ax = plt.subplots(1, 1, figsize = (sizex, sizey), subplot_kw={'projection': ccrs.PlateCarree()})
+        # Plot the data
+        CS = ax.contour(da_pr.longitude,da_pr.latitude,da_pr[k,:,:],
+                    transform=ccrs.PlateCarree(),
+                    levels=pcontours,
+                    colors='k',
+                    zorder=3,
+                    linewidths=[2,1,1,1,1])
+        ax.clabel(CS,inline=1,fmt='%d')
+        im = plt.pcolormesh(da_tp.longitude, da_tp.latitude, da_tp[k,:,:], cmap='RdBu_r', vmin=0, vmax=80) 
+        
+        # Set the figure title, add lat/lon grid and coastlines
+        ax.set_title(f'Mean of monthly total precipitation for {period}', fontsize=16)
+        ax.gridlines(draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle='--') 
+        ax.coastlines(color='black')
+        #ax.set_extent([-25, 40, 34, 72], crs=ccrs.PlateCarree())
+
+
+        
+        # Specify the colourbar
+        cbar = plt.colorbar(im,fraction=0.05, pad=0.04,orientation="horizontal")
+        cbar.set_label('Total precipitation (kg/m2)') 
+
+        # Save the figure
+        fig.savefig(os.path.join(OUTDIR,f'monthly_tp_mslp_era5_{period}.png'))
+        fig.clf()
+        plt.close(fig)
+        gc.collect()
+
+
+
 if __name__=="__main__":
+    OUTDIR="means_era5"
     #era5_file=os.path.join(OUTDIR,"./era5_monthly_t2m_greenland.nc")
     #plot_t2m(era5_file,sizex=16,sizey=12,var="t2m"):
 
@@ -119,7 +163,7 @@ if __name__=="__main__":
     era5_file=os.path.join(OUTDIR,"./era5_monthly_t2m_greenland.nc")
     era5_file = os.path.join(OUTDIR,"daily_mean_tmax_era5_202301.nc")
     #plot_t2m_daily(era5_file,sizex=16,sizey=12,var="mx2t")
-    plot_t2m_daily(era5_file,sizex=16,sizey=12,var="mx2t")
+    #plot_t2m_daily(era5_file,sizex=16,sizey=12,var="mx2t")
 
-    #era5_file=os.path.join(OUTDIR,"./era5_monthly_totprec_greenland.nc")
-    #plot_tp(era5_file)
+    era5_file=os.path.join(OUTDIR,"era5_monthly_tp_mslp_greenland.nc")
+    plot_tp_mslp(era5_file)

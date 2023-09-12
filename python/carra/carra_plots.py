@@ -12,7 +12,7 @@ warnings.filterwarnings('ignore')
 
 def get_codes(param) -> dict():
     if param == "mslp":
-        params = {'mlsp':{"param":"151","level":0,"typeOfLevel":"meanSea","levelType":"sfc"}}
+        params = {'mslp':{"param":"151","level":0,"typeOfLevel":"meanSea","levelType":"sfc"}}
     elif param == "t2m":
         params = {'t2m':{"param":"167","level":2,"typeOfLevel":"heightAboveGround","levelType":"sfc"}}
     elif param == "tp":
@@ -195,31 +195,85 @@ def plot_tp(ds,period,sizex=18,sizey=14):
     plt.close(fig)
     gc.collect()
 
-def plot_tp_mslp(ds,period,sizex=18,sizey=14):
+def plot_tp_mslp(ds_tp,ds_mslp,period,sizex=18,sizey=14):
+    lons = ds_tp['misc']['lons']
+    lats = ds_tp['misc']['lats']
+    proj = ds_tp['misc']['proj']
+    dt = ds_tp['misc']['date']
+    fcstep = ds_tp['misc']['fcstep']
+    # Fields to plot
+    mslp = ds_mslp['params']['mslp']['field']/100
+    precip = ds_tp['params']['tp']['field']
+    fig = plt.figure(figsize=(sizex,sizey),edgecolor='k')
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    #ax = plt.axes(projection=proj)
+    #pcontours=[50,100,150,200,250,300,350,400,450,500,550,600,700,800, 900,1000,1050,1100] #,900.,800.,700.,600.,500.,400.,300.,200.,100.,50.]
+    pcontours = np.arange(960,1060,2)
+
+
+    variable = [key for key in ds_tp["params"].keys()][0]
+    print(f"Min and max for tp: {precip.min()} {precip.max()}")
+
+    #im = plt.pcolormesh(lons,lats, precip, cmap='RdBu_r', vmin=0, vmax=80) 
+    CS = ax.contour(lons,lats,mslp,
+                    transform=ccrs.PlateCarree(),
+                    levels=pcontours,
+                    colors='k',
+                    zorder=3,
+                    linewidths=[2,1,1,1,1])
+    ax.clabel(CS,inline=1,fmt='%d')
+    im=ax.pcolormesh(lons,lats, precip, cmap='RdBu_r', vmin=0, vmax=80) 
+    ax.gridlines(draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle='--') 
+    ax.coastlines(color='black')
+    ax.set_title(f'CARRA monthly total precipitation for {period}', fontsize=16)
+    #cbar = plt.colorbar(CS,fraction=0.05, pad=0.04,orientation="horizontal")
+    cbar = plt.colorbar(im,fraction=0.05, pad=0.04,orientation="horizontal")
+    cbar.set_label('Total precipitation (kg/m2)')
+    fig.savefig(os.path.join(OUTDIR,f'monthly_tp_mslp_carra_{period}.png'))
+    fig.clf()
+    plt.close(fig)
+    gc.collect()
 
 if __name__=="__main__":
     OUTDIR="means_gribmean"
     from pathlib import Path
     year="2012"
     params = {'t2m':{"param":"167","level":2,"typeOfLevel":"heightAboveGround","levelType":"sfc"}}
-    for month in range(1,7):
-        period=year+str(month).zfill(2)    
-        #monthly_mean_no-ar-cw_an_sfc_201201.grib2
-        gfile=os.path.join(OUTDIR,year,"monthly_mean_no-ar-cw_an_sfc_"+period+".grib2")
-        ds = read_vars(gfile,params)   
-        plot_t2m(ds,period)
-    
-    sys.exit(0)
+    #for month in range(1,7):
+    #    period=year+str(month).zfill(2)    
+    #    #template: monthly_mean_no-ar-cw_an_sfc_201201.grib2
+    #    gfile=os.path.join(OUTDIR,year,"monthly_mean_no-ar-cw_an_sfc_"+period+".grib2")
+    #    ds = read_vars(gfile,params)   
+    #    plot_t2m(ds,period)
+    #
+    #sys.exit(0)
 
-    year="2023"
-    params = {'tp':{"param":"228228","level":0,"typeOfLevel":"surface","levelType":"sfc"}}
-    for month in range(1,7):
-        period=year+str(month).zfill(2)    
+    #year="2023"
+    #params = {'tp':{"param":"228228","level":0,"typeOfLevel":"surface","levelType":"sfc"}}
+    #for month in range(1,7):
+    #    period=year+str(month).zfill(2)    
+    #    gfile=os.path.join(OUTDIR,year,"monthly_mean_accum_no-ar-cw_fc_sfc_"+period+".grib2")
+    #    ds = read_vars(gfile,params)   
+    #    plot_tp(ds,period)
+    #sys.exit(0)
+
+    #this one plots tot prec AND pressure levels together
+    year="2013"
+    for month in range(1,2):
+        period=year+str(month).zfill(2)      
         gfile=os.path.join(OUTDIR,year,"monthly_mean_accum_no-ar-cw_fc_sfc_"+period+".grib2")
-        ds = read_vars(gfile,params)   
-        plot_tp(ds,period)
+        params = get_codes("tp")
+        ds_tp = read_vars(gfile,params)   
+
+        #gfile=os.path.join(OUTDIR,year,"mslp_carra_"+period+".grib2")
+        gfile=os.path.join(OUTDIR,year,"monthly_mean_no-ar-cw_an_sfc_"+period+".grib2")
+        params = get_codes("mslp")
+        ds_mslp = read_vars(gfile,params)   
+        plot_tp_mslp(ds_tp,ds_mslp,period)
     sys.exit(0)
 
+    #plotting tmin and tmax only for daily, since there is no monthly means of this quantity for ERA5
+    #use the t2m function to plot monthly
     year="2023"
     gfile = os.path.join(OUTDIR,year,"daily_mean_no-ar-cw_fc_sfc_20230101.grib2")
     params = {'mn2t':{"param":"202","level":2,"typeOfLevel":"heightAboveGround","levelType":"sfc"}}
