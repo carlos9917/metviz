@@ -211,13 +211,47 @@ def read_vars(gribfile,params):
     return ds
 ```
 
-Read again the data using the function above
+Read again the data using the function above. In this case reading T2m
 
 ```{python}
 params = {'t2m':{"param":"167","level":2,"typeOfLevel":"heightAboveGround","levelType":"sfc"}}
 fin_carra=os.path.join(DATADIR,"means_gribmean","t2m_mean.grib2")
-
 ds_read = read_vars(fin_carra,params)
-proj = ds_read["misc"]["proj"]
-print(proj)
+```
+
+Now plot the data using the function below.
+```{python}
+def plot_t2m(ds): #,proj=ccrs.PlateCarree()):
+    lons = ds['misc']['lons']
+    lats = ds['misc']['lats']
+    proj = ds['misc']['proj']
+    dt = ds['misc']['date']
+    fcstep = ds['misc']['fcstep']
+    proj = ds_read["misc"]["proj"]
+
+    variable = [key for key in ds["params"].keys()][0]
+    t2m = ds['params'][variable]['field'] - 273.15
+    print(f"Min and max for {variable}: {t2m.min()} {t2m.max()}")
+    fig = plt.figure(figsize=(12,10))
+    ax = plt.axes(projection=proj) #ccrs.PlateCarree())
+    CS = ax.contourf(lons,lats,t2m,transform=ccrs.PlateCarree(),cmap="RdBu_r") #,colors=t_colors,levels=t_levels)
+    ax.gridlines(draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle='--')
+    ax.coastlines(color='black')
+    ax.set_title(f'CARRA monthly 2m temperature for {dt}', fontsize=16)
+    plt.colorbar(CS,shrink=0.5,orientation='vertical')
+
+    # do it another way
+    fig2 = plt.figure(figsize=(10,18))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    im = plt.pcolormesh(lons,lats, t2m, cmap='RdBu_r', vmin=-80, vmax=48)
+    ax.gridlines(draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle='--')
+    ax.coastlines(color='black')
+    ax.set_title(f'CARRA monthly 2m temperature for {dt}', fontsize=16)
+    cbar = plt.colorbar(im,fraction=0.05, pad=0.04,orientation="horizontal")
+    cbar.set_label('Temperature (C)')
+
+```
+Plot with two different projections
+```{python}
+plot_t2m(ds_read)
 ```
