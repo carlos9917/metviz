@@ -232,6 +232,7 @@ def plot_t2m(ds): #,proj=ccrs.PlateCarree()):
     variable = [key for key in ds["params"].keys()][0]
     t2m = ds['params'][variable]['field'] - 273.15
     print(f"Min and max for {variable}: {t2m.min()} {t2m.max()}")
+    print("Plot in original projection")
     fig = plt.figure(figsize=(12,10))
     ax = plt.axes(projection=proj) #ccrs.PlateCarree())
     CS = ax.contourf(lons,lats,t2m,transform=ccrs.PlateCarree(),cmap="RdBu_r") #,colors=t_colors,levels=t_levels)
@@ -239,9 +240,20 @@ def plot_t2m(ds): #,proj=ccrs.PlateCarree()):
     ax.coastlines(color='black')
     ax.set_title(f'CARRA monthly 2m temperature for {dt}', fontsize=16)
     plt.colorbar(CS,shrink=0.5,orientation='vertical')
+    
+    print("Plot in polar stereographic projection")
+    fig2=plt.figure(figsize=(10,18)) 
+    polar_proj = ccrs.NorthPolarStereo()
+    ax = plt.axes(projection=polar_proj)
+    CS = ax.contourf(lons,lats,t2m,transform=ccrs.PlateCarree(),cmap="RdBu_r")
+    ax.gridlines(draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle='--')
+    ax.coastlines(color='black')
+    ax.set_title(f'CARRA monthly 2m temperature for {dt}', fontsize=16)
+    plt.colorbar(CS,shrink=0.5,orientation='vertical')
 
     # do it another way
-    fig2 = plt.figure(figsize=(10,18))
+    print("Plot in Plate Carree")
+    fig3 = plt.figure(figsize=(10,18))
     ax = plt.axes(projection=ccrs.PlateCarree())
     im = plt.pcolormesh(lons,lats, t2m, cmap='RdBu_r', vmin=-80, vmax=48)
     ax.gridlines(draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle='--')
@@ -249,9 +261,8 @@ def plot_t2m(ds): #,proj=ccrs.PlateCarree()):
     ax.set_title(f'CARRA monthly 2m temperature for {dt}', fontsize=16)
     cbar = plt.colorbar(im,fraction=0.05, pad=0.04,orientation="horizontal")
     cbar.set_label('Temperature (C)')
-
 ```
-Plot with two different projections
+Plot with three different projections: Lambert conformal, latlon, and polar stereographic.
 ```{python}
 plot_t2m(ds_read)
 ```
