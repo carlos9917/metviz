@@ -1,4 +1,4 @@
-# Short collection of scripts I use to do pretty plots
+# Collection of scripts for plotting meteorological data from the Harmonie model
 
 ## python
 Python-based scripts for sisaws and carra projects.
