@@ -19,6 +19,7 @@ dependencies:
   - ca-certificates=2023.7.22=hbcca054_0
   - cairo=1.16.0=hbbf8b49_1016
   - cartopy=0.22.0=py39h40cae4c_0
+  - cdo=2.2.2=h536bb36_1
   - cdsapi=0.6.1=pyhd8ed1ab_0
   - certifi=2023.7.22=pyhd8ed1ab_0
   - cffi=1.15.1=py39he91dace_3
@@ -36,6 +37,7 @@ dependencies:
   - eccodes=2.31.0=h35c6de3_1
   - esbuild=0.19.2=ha770c72_0
   - expat=2.5.0=hcb278e6_1
+  - fftw=3.3.10=nompi_hc118613_108
   - findlibs=0.0.5=pyhd8ed1ab_0
   - font-ttf-dejavu-sans-mono=2.37=hab24e00_0
   - font-ttf-inconsolata=3.000=h77eed37_0
@@ -107,6 +109,8 @@ dependencies:
   - libzip=1.10.1=h2629f0a_1
   - libzlib=1.2.13=hd590300_5
   - lz4-c=1.9.4=hcb278e6_0
+  - magics=4.14.2=hd3d5bb6_0
+  - magics-python=1.5.8=pyhd8ed1ab_1
   - make=4.3=hd18ef5c_1
   - markdown-it-py=3.0.0=pyhd8ed1ab_0
   - matplotlib-base=3.7.2=py39h0126182_0
@@ -135,6 +139,7 @@ dependencies:
   - pyshp=2.3.1=pyhd8ed1ab_0
   - pysocks=1.7.1=pyha2e5f31_6
   - python=3.9.16=h2782a2a_0_cpython
+  - python-cdo=1.6.0=pyhd8ed1ab_0
   - python-dateutil=2.8.2=pyhd8ed1ab_0
   - python-eccodes=1.5.2=py39h0f8d45d_0
   - python-tzdata=2023.3=pyhd8ed1ab_0
@@ -192,6 +197,7 @@ dependencies:
   - sed=4.8=he412f7d_0
   - setuptools=68.0.0=pyhd8ed1ab_0
   - shapely=2.0.1=py39h1bc45ef_2
+  - simplejson=3.19.1=py39h72bdee0_0
   - six=1.16.0=pyh6c4a22f_0
   - snappy=1.1.10=h9fff704_0
   - sqlite=3.16.2=1
@@ -202,6 +208,7 @@ dependencies:
   - tqdm=4.66.1=pyhd8ed1ab_0
   - typing_extensions=4.7.1=pyha770c72_0
   - tzdata=2023c=h71feb2d_0
+  - udunits2=2.2.28=h40f5838_1
   - unicodedata2=15.0.0=py39hb9d737c_0
   - urllib3=2.0.4=pyhd8ed1ab_0
   - wheel=0.40.0=pyhd8ed1ab_0
