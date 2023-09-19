@@ -262,7 +262,7 @@ def plot_t2m(ds): #,proj=ccrs.PlateCarree()):
     cbar = plt.colorbar(im,fraction=0.05, pad=0.04,orientation="horizontal")
     cbar.set_label('Temperature (C)')
 ```
-Plot with three different projections: Lambert conformal, latlon, and polar stereographic.
+Plot with three different projections: Lambert conformal, polar stereographic and latlon.
 ```{python}
 plot_t2m(ds_read)
 ```
