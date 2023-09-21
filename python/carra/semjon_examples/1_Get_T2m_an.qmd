@@ -1,0 +1,117 @@
+---
+title: "CARRA tutorial to download and plot data, part I"
+format: html
+author: "Semjon Schimanke"
+date: "19 September 2023"
+date-modified: last-modified
+lang: en
+jupyter: python3
+---
+## Overview
+
+CARRA data can be found in the CDS (Copernicus Climate Data Store, https://cds.climate.copernicus.eu/cdsapp#!/home).
+You need to create an account and accept the terms and conditions for all datasets that you want to use.
+
+
+### Fetching CARRA data
+The source coode will download the month of June 2023. By specifying the start and end date below you can easely download longer periods.
+Here, we download the 3-hourly analysis time steps and the data will be stored in a specified file.
+---
+
+```{python}
+import cdsapi
+
+c = cdsapi.Client()
+
+def fetch_one_month(month, year):
+    c.retrieve(
+        'reanalysis-carra-single-levels',
+        {
+            'format': 'grib',
+            'domain': 'west_domain',
+            'level_type': 'surface_or_atmosphere',
+            'variable': '2m_temperature',
+            'product_type': 'analysis',
+            'year': year,
+            'month': month,
+            'day': [
+                '01', '02', '03',
+                '04', '05', '06',
+                '07', '08', '09',
+                '10', '11', '12',
+                '13', '14', '15',
+                '16', '17', '18',
+                '19', '20', '21',
+                '22', '23', '24',
+                '25', '26', '27',
+                '28', '29', '30',
+                '31',
+            ],
+            'time': [
+                '00:00', '03:00', '06:00',
+                '09:00', '12:00', '15:00',
+                '18:00', '21:00',
+            ],
+        },
+        '/ec/res4/scratch/smos/CARRA/Raw_data/T2m_an_'+str(year)+"{:02d}".format(month)+'.grb')
+
+    
+yearStart = 2023
+yearEnd   = 2023
+monthStart =  6
+monthEnd   =  6
+for year in list(range(yearStart, yearEnd + 1)):
+    for month in list(range(1,13)):
+        if year == yearStart and month < monthStart:
+            # Before the start date.
+            continue
+        if year == yearEnd and month > monthEnd:
+            # After end date.
+            break
+
+        print ("Data will be fetched for ", year, month)
+        fetch_one_month(month, year)
+```
+
+---
+### Fetching ERA5 data
+
+Here, you downlaod one month of ERA5 data (June 2023). Same as for CARRA, we download 3-hourly data though ERA5 does offer hourly analyses.
+
+---
+
+```{python}
+
+c.retrieve(
+    'reanalysis-era5-single-levels',
+    {
+        'product_type': 'reanalysis',
+        'variable': '2m_temperature',
+        'year': '2023',
+        'month': '06',
+        'day': [
+            '01', '02', '03',
+            '04', '05', '06',
+            '07', '08', '09',
+            '10', '11', '12',
+            '13', '14', '15',
+            '16', '17', '18',
+            '19', '20', '21',
+            '22', '23', '24',
+            '25', '26', '27',
+            '28', '29', '30',
+        ],
+        'time': [
+            '00:00', '03:00', '06:00',
+            '09:00', '12:00', '15:00',
+            '18:00', '21:00',
+        ],
+        'area': [
+            90, -110, 55,
+            40,
+        ],
+        'format': 'netcdf',
+    },
+    '/ec/res4/scratch/smos/CARRA/ERA5/era5_t2m_202306.nc')
+
+```

@@ -1,0 +1,115 @@
+---
+title: "CARRA tutorial to download and plot data, part III"
+format: html
+author: "Semjon Schimanke"
+date: "19 September 2023"
+date-modified: last-modified
+lang: en
+jupyter: python3
+---
+## Overview
+
+Here, we do a comparison of CARRA with ERA5. The data was downloaded in script I.
+
+To perform the comparison, we interpolate the ERA5 data onto the CARRA grid with help of the CDOs.
+
+### Define the files needed for the interpolation.
+The CDO command uses the grid description from the CARRA file to interpolate the ERA5 data. The corresponding files are defined here.
+```{python}
+DATADIR = '/ec/res4/scratch/smos/CARRA'
+fCARRA = f'{DATADIR}/Raw_data/T2m_an_202306.grb'
+fERA5 = f'{DATADIR}/ERA5/era5_t2m_202306.nc'
+fERA5_CARRA_grid = f'{DATADIR}/ERA5/era5_t2m_202306_CARRA_grid.nc'
+```
+
+### Interpolation to CARRA grid with CDO
+After importing the CDOs into python it is one line to interpolate between the grids.
+Note that CDO can handle both GRIB format and NetCDF data. For instance, CARRA is downloaded in GRIB whereas we downloaded ERA5 as NetCDF.
+
+More information regarding the CDOs (Climate data operators) can be found at https://code.mpimet.mpg.de/projects/cdo
+```{python}
+from cdo import *
+cdo   = Cdo()
+
+cdo.remapbil(fCARRA, input=fERA5, output=fERA5_CARRA_grid)
+```
+
+
+### Open the datasets (similar to script II)
+```{python}
+import xarray as xr
+
+# Open Datasets
+CARRA = xr.open_dataset(fCARRA)
+ERA5  = xr.open_dataset(fERA5_CARRA_grid)
+
+# Compute monthly mean
+print("Compute the mean")
+CARRA_mean = CARRA.mean(dim="time", keep_attrs=True)
+ERA5_mean = ERA5.mean(dim="time", keep_attrs=True)
+print("Done.")
+
+# Change longitudes from 0-360 to -180 to 180, needed for the plotting
+CARRA_mean = CARRA_mean.assign_coords(longitude=(((CARRA_mean.longitude + 180) % 360) - 180))
+ERA5_mean = ERA5_mean.assign_coords(longitude=CARRA_mean.longitude)
+
+# Change unit from K to C and add the unit to the attributes
+CARRA_mean_C = CARRA_mean - 273.15
+CARRA_mean_C = CARRA_mean_C.assign_attrs(CARRA_mean.attrs)
+CARRA_mean_C.attrs['units'] = 'deg C'
+ERA5_mean_C = ERA5_mean - 273.15
+ERA5_mean_C = ERA5_mean_C.assign_attrs(ERA5_mean.attrs)
+ERA5_mean_C.attrs['units'] = 'deg C'
+```
+
+
+### Plotting of ERA5
+```{python}
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+
+print("Start plotting maps")
+print("Print ERA5")
+# create the figure panel and the map using the Cartopy Lambert conformal projection
+fig, ax = plt.subplots(1, 1, figsize = (16, 8), subplot_kw={'projection': ccrs.LambertConformal(central_latitude=70.0, central_longitude=-40.0)})
+
+# Plot the data
+im = plt.pcolormesh(ERA5_mean_C.longitude, ERA5_mean_C.latitude, ERA5_mean_C.t2m, transform = ccrs.PlateCarree(), cmap='RdBu_r', vmin=-15, vmax=15)
+
+# Set the figure title
+ax.set_title('Near-surface air temperature for June 2023 based on ERA5', fontsize=16)
+ax.coastlines(color='black')
+ax.gridlines(draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle='--') 
+
+# Specify the colourbar
+cbar = plt.colorbar(im,fraction=0.05, pad=0.04)
+cbar.set_label('temperature')
+
+# Save the figure
+fig.savefig(f'{DATADIR}/Figures/ERA5_202306_map.png')
+```
+
+### Plot the difference between CARRA and ERA5
+Note that the differences are computed in the plotting command itself.
+```{python}
+print("Print CARRA - ERA5")
+# create the figure panel and the map using the Cartopy Lambert conformal projection
+fig, ax = plt.subplots(1, 1, figsize = (16, 8), subplot_kw={'projection': ccrs.LambertConformal(central_latitude=70.0, central_longitude=-40.0)})
+
+# Plot the data, the differences are computed on the fly.
+im = plt.pcolormesh(CARRA_mean_C.longitude, CARRA_mean_C.latitude, ERA5_mean_C.t2m - CARRA_mean_C.t2m,
+                    transform = ccrs.PlateCarree(), cmap='RdBu_r', vmin=-10, vmax=10)
+
+# Set the figure title
+ax.set_title('Near-surface air temperature June 2023, difference ERA5 - CARRA', fontsize=16)
+ax.coastlines(color='black')
+ax.gridlines(draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle='--') 
+
+# Specify the colourbar
+cbar = plt.colorbar(im,fraction=0.05, pad=0.04)
+cbar.set_label('temperature')
+
+# Save the figure
+fig.savefig(f'{DATADIR}/Figures/ERA5-CARRA_map.png')
+
+```
